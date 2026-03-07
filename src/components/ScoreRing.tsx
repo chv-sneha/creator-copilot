@@ -5,12 +5,13 @@ interface ScoreRingProps {
 }
 
 const ScoreRing = ({ score, size = 120, strokeWidth = 8 }: ScoreRingProps) => {
+  const validScore = typeof score === 'number' && !isNaN(score) ? Math.max(0, Math.min(100, score)) : 0;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
+  const offset = circumference - (validScore / 100) * circumference;
 
-  const colorClass = score >= 75 ? "text-primary" : score >= 50 ? "text-yellow-400" : "text-destructive";
-  const strokeColor = score >= 75 ? "hsl(84 100% 65%)" : score >= 50 ? "hsl(45 100% 65%)" : "hsl(0 100% 70%)";
+  const colorClass = validScore >= 75 ? "text-primary" : validScore >= 50 ? "text-yellow-400" : "text-destructive";
+  const strokeColor = validScore >= 75 ? "hsl(84 100% 65%)" : validScore >= 50 ? "hsl(45 100% 65%)" : "hsl(0 100% 70%)";
 
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -37,7 +38,7 @@ const ScoreRing = ({ score, size = 120, strokeWidth = 8 }: ScoreRingProps) => {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`font-heading text-2xl font-extrabold ${colorClass}`}>{score}</span>
+        <span className={`font-heading text-2xl font-extrabold ${colorClass}`}>{validScore}</span>
       </div>
     </div>
   );

@@ -9,6 +9,8 @@ import Auth from "./pages/Auth";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardHome from "./pages/DashboardHome";
 import ContentAnalyzer from "./pages/ContentAnalyzer";
+import ContentAnalyzerBedrock from "./pages/ContentAnalyzerBedrock";
+import ContentAnalyzerComparison from "./pages/ContentAnalyzerComparison";
 import ContentStudio from "./pages/ContentStudio";
 import TrendsCalendar from "./pages/TrendsCalendar";
 import SafetyCopyright from "./pages/SafetyCopyright";
@@ -40,6 +42,8 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
               <Route path="analyzer" element={<ContentAnalyzer />} />
+              <Route path="analyzer-bedrock" element={<ContentAnalyzerBedrock />} />
+              <Route path="analyzer-comparison" element={<ContentAnalyzerComparison />} />
               <Route path="studio" element={<ContentStudio />} />
               <Route path="trends" element={<TrendsCalendar />} />
               <Route path="safety" element={<SafetyCopyright />} />

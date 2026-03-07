@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Search, Palette, TrendingUp, Shield, DollarSign, Calendar, Zap, Hash } from "lucide-react";
+import { Search, Palette, TrendingUp, Shield, DollarSign, Calendar, Zap, Hash, Sparkles } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 
 const quickActions = [

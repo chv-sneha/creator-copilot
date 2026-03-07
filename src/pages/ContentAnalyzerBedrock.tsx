@@ -7,9 +7,9 @@ import { analyzeContentWithBedrock } from "@/lib/bedrock";
 interface BedrockResult {
   qualityScore: number;
   hookRating: number;
-  issues: string[];
-  suggestions: string[];
-  platformTip: string;
+  issues?: string[];
+  suggestions?: string[];
+  platformTip?: string;
 }
 
 const ContentAnalyzerBedrock = () => {
@@ -34,7 +34,15 @@ const ContentAnalyzerBedrock = () => {
     setLoading(true);
     try {
       const analysisResult = await analyzeContentWithBedrock(content, platform, region);
-      setResult(analysisResult);
+      console.log('🔍 API Response:', analysisResult);
+      // Ensure required fields have defaults
+      setResult({
+        qualityScore: analysisResult.qualityScore || 0,
+        hookRating: analysisResult.hookRating || 0,
+        issues: analysisResult.issues,
+        suggestions: analysisResult.suggestions,
+        platformTip: analysisResult.platformTip,
+      });
       setAnalyzed(true);
       toast({
         title: "Analysis Complete!",
@@ -159,7 +167,7 @@ const ContentAnalyzerBedrock = () => {
             </div>
 
             {/* Issues Found */}
-            {result.issues.length > 0 && (
+            {result.issues && result.issues.length > 0 && (
               <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.1s" }}>
                 <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-red-500" />
@@ -177,31 +185,35 @@ const ContentAnalyzerBedrock = () => {
             )}
 
             {/* Suggestions */}
-            <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                <Lightbulb className="w-4 h-4 text-yellow-500" />
-                Improvement Suggestions
-              </h4>
-              <ul className="space-y-3">
-                {result.suggestions.map((suggestion, index) => (
-                  <li key={index} className="flex gap-3 text-sm text-muted-foreground">
-                    <span className="text-primary font-bold mt-0.5">•</span>
-                    <span className="flex-1">{suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {result.suggestions && result.suggestions.length > 0 && (
+              <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-yellow-500" />
+                  Improvement Suggestions
+                </h4>
+                <ul className="space-y-3">
+                  {result.suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex gap-3 text-sm text-muted-foreground">
+                      <span className="text-primary font-bold mt-0.5">•</span>
+                      <span className="flex-1">{suggestion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Platform-Specific Tip */}
-            <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                <Target className="w-4 h-4 text-blue-500" />
-                {platform} Optimization Tip
-              </h4>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {result.platformTip}
-              </p>
-            </div>
+            {result.platformTip && (
+              <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+                <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-blue-500" />
+                  {platform} Optimization Tip
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {result.platformTip}
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>

@@ -2,7 +2,25 @@ import { useState } from "react";
 import ScoreRing from "@/components/ScoreRing";
 import { Sparkles, Copy, Check, TrendingUp, Clock, Target, Zap, Heart, Eye, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { AnalysisResult } from "@/lib/gemini";
+import { analyzeContentWithBedrock } from "@/lib/bedrock";
+interface AnalysisResult {
+  score: number;
+  hookRating?: number;
+  suggestions: string[];
+  issues?: string[];
+  platformTip?: string;
+  hashtags: string[];
+  engagementPrediction: "Low" | "Medium" | "High";
+  engagementReason: string;
+  readabilityScore?: number;
+  sentimentScore?: number;
+  keywordDensity?: { [key: string]: number };
+  optimalPostingTimes?: string[];
+  competitorAnalysis?: string;
+  viralPotential?: number;
+  brandAlignment?: number;
+  callToActionStrength?: number;
+}
 
 const ContentAnalyzer = () => {
   const [content, setContent] = useState("");
@@ -27,18 +45,28 @@ const ContentAnalyzer = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/analyze-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, platform, region })
-      });
-
-      if (!response.ok) {
-        throw new Error('Analysis failed');
-      }
-
-      const analysisResult = await response.json();
-      setResult(analysisResult);
+      const analysisResult = await analyzeContentWithBedrock(content, platform, region);
+      
+      const mappedResult: AnalysisResult = {
+        score: analysisResult.qualityScore || analysisResult.score || 0,
+        hookRating: analysisResult.hookRating,
+        suggestions: analysisResult.suggestions || [],
+        issues: analysisResult.issues,
+        platformTip: analysisResult.platformTip,
+        hashtags: analysisResult.hashtags || [],
+        engagementPrediction: analysisResult.engagementPrediction || "Medium",
+        engagementReason: analysisResult.engagementReason || "Analysis complete",
+        readabilityScore: analysisResult.readabilityScore,
+        sentimentScore: analysisResult.sentimentScore,
+        keywordDensity: analysisResult.keywordDensity,
+        optimalPostingTimes: analysisResult.optimalPostingTimes,
+        competitorAnalysis: analysisResult.competitorAnalysis,
+        viralPotential: analysisResult.viralPotential,
+        brandAlignment: analysisResult.brandAlignment,
+        callToActionStrength: analysisResult.callToActionStrength,
+      };
+      
+      setResult(mappedResult);
       setAnalyzed(true);
     } catch (error) {
       toast({
@@ -128,7 +156,7 @@ const ContentAnalyzer = () => {
       {/* Left — Input */}
       <div className="space-y-4">
         <div className="card-surface p-5 space-y-4">
-          <h3 className="font-heading text-base font-bold text-foreground">Analyze Your Content</h3>
+          <h3 className="font-heading text-base font-bold text-foreground">Analyze Your Content (AWS Bedrock)</h3>
           <div>
             <label className="text-sm text-muted-foreground mb-1.5 block">Paste your content draft</label>
             <textarea
@@ -202,7 +230,7 @@ const ContentAnalyzer = () => {
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                Analyze
+                Analyze with AWS Bedrock
               </>
             )}
           </button>
@@ -269,7 +297,31 @@ const ContentAnalyzer = () => {
                     {result.score > 70 ? "Excellent" : result.score >= 40 ? "Good" : "Needs Work"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">Content Quality Score</p>
+                  {result.hookRating !== undefined && (
+                    <div className="mt-4 text-center">
+                      <p className="text-2xl font-bold text-primary">{result.hookRating}/10</p>
+                      <p className="text-xs text-muted-foreground">Hook Rating</p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Issues */}
+                {result.issues && result.issues.length > 0 && (
+                  <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                    <h4 className="font-heading text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                      <span className="text-red-500">⚠</span>
+                      Issues Found
+                    </h4>
+                    <ul className="space-y-3">
+                      {result.issues.map((issue, index) => (
+                        <li key={index} className="flex gap-3 text-sm text-muted-foreground">
+                          <span className="text-red-500 font-bold mt-0.5">•</span>
+                          <span className="flex-1">{issue}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Suggestions for Improvement */}
                 <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.15s" }}>
@@ -286,6 +338,19 @@ const ContentAnalyzer = () => {
                     ))}
                   </ul>
                 </div>
+
+                {/* Platform Tip */}
+                {result.platformTip && (
+                  <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                    <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-primary" />
+                      {platform} Pro Tip
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {result.platformTip}
+                    </p>
+                  </div>
+                )}
 
                 {/* Predicted Engagement */}
                 <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>

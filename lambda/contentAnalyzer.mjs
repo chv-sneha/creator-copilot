@@ -5,8 +5,9 @@ const client = new BedrockRuntimeClient({ region: "us-east-1" });
 export const handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST,OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
+    'Content-Type': 'application/json'
   };
 
   if (event.httpMethod === 'OPTIONS') {
@@ -14,6 +15,17 @@ export const handler = async (event) => {
   }
 
   try {
+    console.log('Event:', JSON.stringify(event));
+    console.log('Event body:', event.body);
+    
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'No request body provided' })
+      };
+    }
+    
     const { content, platform, region } = JSON.parse(event.body);
 
     if (!content || !platform || !region) {
@@ -24,36 +36,80 @@ export const handler = async (event) => {
       };
     }
 
-    const prompt = `You are an expert social media analyst. Analyze this ${platform} content for ${region} audience.
+    const prompt = `You are an expert social media strategist and content analyst with 10+ years of experience analyzing viral content across all major platforms.
 
-Content: "${content}"
+Your task: Provide a comprehensive, brutally honest analysis of this ${platform} post targeting ${region} audience.
 
-Provide analysis in this EXACT JSON format (no markdown, no backticks):
+Content to analyze:
+"${content}"
+
+Analyze based on these criteria:
+
+1. QUALITY SCORE (0-100):
+- Content length and depth
+- Grammar and clarity
+- Value proposition
+- Emotional impact
+- Call-to-action presence
+- Visual appeal potential
+
+2. HOOK RATING (0-10):
+- First 3 words effectiveness
+- Curiosity generation
+- Pattern interrupt
+- Scroll-stopping power
+
+3. PLATFORM-SPECIFIC ANALYSIS for ${platform}:
+${platform === 'Instagram' ? '- Visual storytelling potential\n- Reel/Story suitability\n- Carousel opportunity\n- Hashtag strategy' : ''}
+${platform === 'LinkedIn' ? '- Professional tone\n- Thought leadership value\n- Industry relevance\n- Networking potential' : ''}
+${platform === 'YouTube' ? '- Title SEO optimization\n- Thumbnail potential\n- Watch time factors\n- Retention hooks' : ''}
+${platform === 'X (Twitter)' ? '- Character efficiency\n- Thread potential\n- Retweet worthiness\n- Trending topic alignment' : ''}
+${platform === 'TikTok' ? '- Trend alignment\n- Sound/music potential\n- Gen Z appeal\n- Viral hook strength' : ''}
+${platform === 'Facebook' ? '- Community engagement\n- Shareability\n- Discussion potential\n- Algorithm optimization' : ''}
+
+4. REGIONAL CONSIDERATIONS for ${region}:
+- Cultural relevance
+- Local trends alignment
+- Language nuances
+- Timezone optimization
+
+Provide your analysis in this EXACT JSON format (no markdown, no backticks):
 {
-  "qualityScore": <number 0-100>,
-  "hookRating": <number 0-10>,
-  "issues": [<array of 2-4 specific problems found>],
-  "suggestions": [<array of exactly 3 actionable improvement tips>],
-  "platformTip": "<one specific optimization tip for ${platform}>"
-}`;
+  "score": <honest rating 0-100>,
+  "hookRating": <honest rating 0-10>,
+  "suggestions": [<4-6 specific, actionable improvements>],
+  "hashtags": [<12-20 highly relevant hashtags with # symbol>],
+  "engagementPrediction": "Low" or "Medium" or "High",
+  "engagementReason": "<detailed explanation based on content analysis>",
+  "readabilityScore": <0-100 based on clarity and structure>,
+  "sentimentScore": <-100 to 100, negative to positive>,
+  "keywordDensity": {"keyword1": percentage, "keyword2": percentage, ...top 5},
+  "optimalPostingTimes": [<3-4 best times for ${region}>],
+  "competitorAnalysis": "<how this compares to trending content>",
+  "viralPotential": <0-100 likelihood of going viral>,
+  "brandAlignment": <0-100 professional brand building score>,
+  "callToActionStrength": <0-100 CTA effectiveness>,
+  "issues": [<2-4 specific problems found>],
+  "platformTip": "<one specific ${platform} optimization tip>"
+}
+
+Be critical and honest. Short or low-quality content should get low scores. High-quality, engaging content deserves high scores.`;
 
     const command = new InvokeModelCommand({
-      modelId: "amazon.titan-text-express-v1",
-      contentType: "application/json",
-      accept: "application/json",
+      modelId: "us.amazon.nova-lite-v1:0",
       body: JSON.stringify({
-        inputText: prompt,
-        textGenerationConfig: {
-          maxTokenCount: 1024,
+        messages: [{ role: "user", content: [{ text: prompt }] }],
+        inferenceConfig: {
+          max_new_tokens: 3000,
           temperature: 0.7,
-          topP: 0.9
+          top_p: 0.9
         }
       })
     });
 
     const response = await client.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    const text = responseBody.results[0].outputText.trim();
+    let text = responseBody.output.message.content[0].text.trim();
     
     let cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
     const result = JSON.parse(cleanText);
