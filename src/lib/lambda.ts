@@ -173,3 +173,24 @@ export const analyzeComments = async (data: {
   if (!response.ok) throw new Error('Comment analysis failed');
   return await response.json();
 };
+
+export const generateThumbnail = async (data: {
+  mode: string;
+  videoTitle: string;
+  description: string;
+  platform: string;
+  style: string;
+  colorScheme: string;
+  mainText?: string;
+  subText?: string;
+  mood: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_THUMBNAIL_GENERATOR, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Thumbnail generation failed');
+  return await response.json();
+};
