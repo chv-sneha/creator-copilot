@@ -14,13 +14,13 @@ export const handler = async (event) => {
   }
 
   try {
-    const { niche, region, platforms, language } = JSON.parse(event.body);
+    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    const { platform, niche, region, timeframe } = body;
 
     const prompt = `You are a social media trend analyst. Generate 8 trending hashtags for:
 Niche: ${niche}
-Region: ${region}
-Platforms: ${platforms.join(', ')}
-Language: ${language}
+Region: ${region || 'Global'}
+Platform: ${platform}
 
 Return ONLY valid JSON array with this exact structure:
 [
@@ -38,7 +38,7 @@ Rules:
 - volume: 10000-500000
 - growth: 15-95 (percentage)
 - difficulty: "Easy", "Medium", or "Hard"
-- platforms: subset of ${platforms.join(', ')}`;
+- platforms: array with 1-3 platforms from ["Instagram", "LinkedIn", "YouTube", "X (Twitter)", "TikTok", "Facebook"]`;
 
     const payload = {
       messages: [{ role: "user", content: [{ text: prompt }] }],

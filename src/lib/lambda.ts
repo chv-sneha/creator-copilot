@@ -47,3 +47,52 @@ export const translateContent = async (data: {
   if (!response.ok) throw new Error('Translation failed');
   return await response.json();
 };
+
+export const analyzeTrends = async (data: {
+  platform: string;
+  niche: string;
+  region?: string;
+  timeframe?: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_TREND_ANALYZER, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Trend analysis failed');
+  return await response.json();
+};
+
+export const generateContentIdeas = async (data: {
+  niche: string;
+  platform: string;
+  contentType?: string;
+  targetAudience?: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_CONTENT_IDEA_GENERATOR, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Content idea generation failed');
+  return await response.json();
+};
+
+export const getSchedulingIntelligence = async (data: {
+  platform: string;
+  contentType: string;
+  niche: string;
+  region: string;
+  targetAudience?: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_SCHEDULING_INTELLIGENCE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Scheduling intelligence failed');
+  return await response.json();
+};

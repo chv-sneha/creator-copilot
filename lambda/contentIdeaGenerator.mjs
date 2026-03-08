@@ -14,14 +14,14 @@ export const handler = async (event) => {
   }
 
   try {
-    const { niche, platforms, targetAudience, contentGoal, language } = JSON.parse(event.body);
+    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    const { niche, platform, contentType, targetAudience } = body;
 
     const prompt = `You are a content strategist. Generate 6 content ideas for:
 Niche: ${niche}
-Platforms: ${platforms.join(', ')}
+Platform: ${platform}
+Content Type: ${contentType || 'Any'}
 Target Audience: ${targetAudience || 'General'}
-Goal: ${contentGoal}
-Language: ${language}
 
 Return ONLY valid JSON array:
 [
@@ -38,7 +38,7 @@ Return ONLY valid JSON array:
 Rules:
 - 6 ideas total
 - format: Post, Reel, Story, Video, Article, Thread, Carousel, Short
-- platform: one from ${platforms.join(', ')}
+- platform: ${platform}
 - difficulty: "Easy", "Medium", or "Hard"
 - trending: true/false
 - estimatedReach: realistic range`;

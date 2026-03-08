@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PillTabs from "@/components/PillTabs";
+import { analyzeTrends, generateContentIdeas } from "@/lib/lambda";
 import { 
   TrendingUp, Calendar, Sparkles, Hash, Instagram, Linkedin, Youtube, Twitter, 
   Clock, Target, Users, Eye, BarChart3, ChevronLeft, ChevronRight, Plus, Copy, Check, Music, Facebook, Trash2, Edit
 } from "lucide-react";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const platformIcons: Record<string, React.ReactNode> = {
@@ -80,17 +81,21 @@ const TrendsCalendar = () => {
     try {
       const q = query(
         collection(db, "scheduledPosts"),
-        where("userId", "==", user.uid),
-        orderBy("date", "asc")
+        where("userId", "==", user.uid)
       );
       const querySnapshot = await getDocs(q);
       const posts = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
       setScheduledPosts(posts);
     } catch (error) {
       console.error("Error loading posts:", error);
+      toast({
+        title: "Error loading posts",
+        description: "Could not load scheduled posts",
+        variant: "destructive"
+      });
     }
   };
 
@@ -223,20 +228,33 @@ const TrendsCalendar = () => {
   const handleGenerateTrends = async () => {
     setLoading(true);
     try {
-      // In a real app, this would call your API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const trendsResponse = await analyzeTrends({
+        platform: formData.platforms[0] || 'Instagram',
+        niche: formData.niche,
+        region: formData.region
+      });
+
+      const ideasResponse = await generateContentIdeas({
+        niche: formData.niche,
+        platform: formData.platforms[0] || 'Instagram',
+        targetAudience: formData.targetAudience
+      });
+
+      setTrendData(trendsResponse.trends || mockTrendData);
+      setContentIdeas(ideasResponse.ideas || mockContentIdeas);
+      setGenerated(true);
+      toast({
+        title: "Trends Discovered!",
+        description: `Found trending hashtags and content ideas for ${formData.niche}`
+      });
+    } catch (error) {
+      console.error('Error:', error);
       setTrendData(mockTrendData);
       setContentIdeas(mockContentIdeas);
       setGenerated(true);
       toast({
-        title: "Trends Discovered!",
-        description: `Found ${mockTrendData.length} trending hashtags and ${mockContentIdeas.length} content ideas`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch trends. Please try again.",
-        variant: "destructive",
+        title: "Using Sample Data",
+        description: "Showing example trends. Connect Lambda for live data."
       });
     } finally {
       setLoading(false);
