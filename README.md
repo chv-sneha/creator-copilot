@@ -1,183 +1,171 @@
 # 🚀 AI Creator Copilot
+### AWS-Powered AI Platform for Social Media Content Creation & Optimization
 
-> **AWS-Powered AI Platform for Social Media Content Creation & Optimization**
+![AWS](https://img.shields.io/badge/AWS-Bedrock%20%7C%20Lambda%20%7C%20S3%20%7C%20Comprehend-FF9900?style=for-the-badge&logo=amazonaws)
+![React](https://img.shields.io/badge/React-TypeScript-61DAFB?style=for-the-badge&logo=react)
+![Serverless](https://img.shields.io/badge/Architecture-Serverless-green?style=for-the-badge)
 
-[![AWS](https://img.shields.io/badge/AWS-Bedrock%20%7C%20Lambda%20%7C%20S3-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore-FFCA28?logo=firebase)](https://firebase.google.com/)
+> **AI Creator Copilot** is a fully serverless, cloud-native platform built on AWS that empowers content creators to generate, analyze, optimize and distribute content across Instagram, LinkedIn, YouTube and X — powered entirely by Amazon Bedrock AI.
 
 ---
 
 ## 📋 Table of Contents
-
-- [Overview](#-overview)
-- [AWS Services Integration](#-aws-services-integration)
-- [Architecture](#-architecture)
-- [Key Features](#-key-features)
-- [Tech Stack](#-tech-stack)
-- [Setup & Installation](#-setup--installation)
-- [AWS Deployment](#-aws-deployment)
-- [Project Structure](#-project-structure)
-- [Contributors](#-contributors)
-- [License](#-license)
-
----
-
-## 🎯 Overview
-
-**AI Creator Copilot** is an enterprise-grade, AWS-powered platform designed to revolutionize content creation for social media creators. By leveraging cutting-edge AWS AI services, we provide real-time content analysis, trend discovery, intelligent scheduling, and AI-generated thumbnails.
-
-### 🏆 Problem Statement
-Content creators struggle with:
-- Analyzing content performance across multiple platforms
-- Discovering trending topics and hashtags
-- Creating eye-catching thumbnails
-- Scheduling posts at optimal times
-- Managing content across different social media platforms
-
-### ✅ Our Solution
-An all-in-one AI platform powered by **AWS Bedrock**, **Lambda**, and **S3** that provides:
-- Real-time AI content analysis
-- Dynamic trend intelligence
-- AI-generated thumbnails
-- Intelligent scheduling recommendations
-- Multi-platform content optimization
+- [Problem Statement](#problem-statement)
+- [Solution](#solution)
+- [AWS Architecture](#aws-architecture)
+- [AWS Services](#aws-services)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Setup & Installation](#setup--installation)
+- [Lambda Functions](#lambda-functions)
+- [API Endpoints](#api-endpoints)
+- [Performance Metrics](#performance-metrics)
+- [Cost Analysis](#cost-analysis)
+- [Contributors](#contributors)
 
 ---
 
-## ☁️ AWS Services Integration
+## 🎯 Problem Statement
 
-### Core AWS Services Used
+Content creators face critical challenges:
+- No real-time feedback on content quality before publishing
+- Manual effort to rewrite content for each platform
+- No intelligent system to detect copyright or toxic content
+- No AI-powered monetization or trend insights
+- Thousands of hours lost to repetitive content tasks
+
+---
+
+## ✅ Solution
+
+AI Creator Copilot solves this with a **fully serverless AWS architecture** that delivers:
+- Real-time AI content analysis via **Amazon Bedrock Nova Pro**
+- Platform-specific content generation for 6 social platforms
+- Copyright and toxicity scanning via **Amazon Comprehend**
+- AI thumbnail generation via **Amazon Nova Canvas**
+- All processed through **AWS Lambda** — zero server management
+
+---
+
+## ☁️ AWS Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│              CLIENT LAYER (Layer 1)                  │
+│         Web App (React/Next.js) + Mobile API         │
+└─────────────────────┬───────────────────────────────┘
+                      │ HTTPS
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│           API GATEWAY LAYER (Layer 2)                │
+│     AWS API Gateway (Routing) + AWS WAF (Security)   │
+└─────────────────────┬───────────────────────────────┘
+                      │ Invoke
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│           SERVERLESS COMPUTE (Layer 2.5)             │
+│         AWS Lambda — All Business Logic              │
+└──────┬──────────────┬──────────────┬────────────────┘
+       │              │              │
+       ▼              ▼              ▼
+┌────────────┐ ┌────────────┐ ┌────────────┐
+│  Bedrock   │ │ Comprehend │ │   S3       │
+│  Nova Pro  │ │  NLP/NER   │ │  Storage   │
+│  Nova Lite │ │  Toxicity  │ │  Thumbnails│
+│Nova Canvas │ │  Sentiment │ └────────────┘
+└────────────┘ └────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────┐
+│              DATA LAYER (Layer 5)                    │
+│  Amazon S3 (Media) | DynamoDB (Logs) | CloudWatch    │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## ☁️ AWS Services
 
 | AWS Service | Purpose | Implementation |
 |------------|---------|----------------|
-| **Amazon Bedrock** | AI/ML inference for content analysis, trend discovery, and thumbnail generation | Nova Lite (text), Nova Canvas (images) |
-| **AWS Lambda** | Serverless compute for AI processing | 5 Lambda functions (Node.js 20.x) |
-| **Amazon S3** | Thumbnail storage and delivery | Public bucket with CDN-ready URLs |
-| **API Gateway** | RESTful API endpoints | 5 endpoints with CORS enabled |
-| **CloudWatch** | Monitoring and logging | Lambda execution logs and metrics |
-| **IAM** | Security and access control | Least-privilege policies |
-
-### AWS Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Frontend (React)                         │
-│                    Vite + TypeScript + Tailwind                  │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             │ HTTPS
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      AWS API Gateway (REST)                      │
-│  /trendAnalyzer  /contentIdeaGenerator  /schedulingIntelligence │
-│  /generateThumbnail  /save-thumbnail                            │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             │ Invoke
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        AWS Lambda Functions                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │ Trend        │  │ Content Idea │  │ Scheduling   │         │
-│  │ Analyzer     │  │ Generator    │  │ Intelligence │         │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘         │
-│         │                  │                  │                  │
-│         └──────────────────┴──────────────────┘                 │
-│                             │                                    │
-│                             ▼                                    │
-│                    ┌─────────────────┐                          │
-│                    │ Amazon Bedrock  │                          │
-│                    │  Nova Lite v1   │                          │
-│                    └─────────────────┘                          │
-│                                                                  │
-│  ┌──────────────┐                    ┌──────────────┐          │
-│  │ Thumbnail    │────────────────────│ Save to S3   │          │
-│  │ Generator    │                    │ Lambda       │          │
-│  └──────┬───────┘                    └──────┬───────┘          │
-│         │                                    │                  │
-│         ▼                                    ▼                  │
-│  ┌─────────────────┐              ┌─────────────────┐          │
-│  │ Amazon Bedrock  │              │   Amazon S3     │          │
-│  │ Nova Canvas v1  │              │   Thumbnails    │          │
-│  └─────────────────┘              └─────────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Firebase (Auth + Firestore)                   │
-│              User Authentication & Data Persistence              │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Data Flow
-
-```
-User Input → API Gateway → Lambda → Bedrock AI → Response
-                                        ↓
-                                   CloudWatch Logs
-                                        ↓
-                                  S3 (Thumbnails)
-```
+| **Amazon Bedrock (Nova Pro)** | Core AI — content analysis, hooks, platform writing, translation | 6 Lambda integrations |
+| **Amazon Bedrock (Nova Lite)** | Lightweight AI — trend discovery, idea generation, scheduling | 3 Lambda integrations |
+| **Amazon Bedrock (Nova Canvas)** | Image generation — AI thumbnails | 1 Lambda integration |
+| **AWS Lambda** | Serverless compute for all AI features | 8 functions, Node.js 24.x |
+| **AWS API Gateway** | REST API routing with CORS | 8 endpoints, prod stage |
+| **Amazon S3** | Thumbnail and media storage | Public CDN-ready bucket |
+| **Amazon Comprehend** | NLP — sentiment, toxicity, copyright risk detection | Safety & Copyright feature |
+| **Amazon DynamoDB** | AI usage logs, content metadata | PutItem on every AI call |
+| **Amazon CloudWatch** | Lambda monitoring, API metrics, execution logs | Auto-enabled |
+| **AWS IAM** | Least-privilege roles for all Lambda functions | Per-function policies |
 
 ---
 
 ## ✨ Key Features
 
-### 1. 🎯 AI Content Analyzer (AWS Bedrock)
-- **8-Metric Analysis System**: Quality, Readability, Sentiment, Viral Potential, Brand Alignment, CTA Strength
-- **Platform-Specific Insights**: Instagram, LinkedIn, YouTube, X (Twitter), TikTok, Facebook, Pinterest
-- **Regional Intelligence**: 13+ regions with cultural awareness
-- **Real-time Processing**: Sub-second response via AWS Lambda
+### 1. 🎯 AI Content Analyzer — Amazon Bedrock Nova Pro
+- **8-metric analysis**: Quality Score, Hook Rating, Readability, Sentiment, Viral Potential, Brand Alignment, CTA Strength, Engagement Prediction
+- **Platform-specific insights**: Instagram, LinkedIn, YouTube, X, TikTok, Facebook
+- **Regional intelligence**: 13+ regions with cultural awareness
+- **Response time**: < 3 seconds via AWS Lambda
 
-### 2. 📈 Trends & Calendar (AWS Bedrock + Lambda)
-- **Dynamic Trend Discovery**: Real-time hashtag analysis powered by Amazon Nova Lite
-- **AI Content Ideas**: Personalized content suggestions based on niche and platform
-- **Intelligent Scheduling**: AI-powered optimal posting time recommendations
-- **Firebase Integration**: Persistent scheduling with Firestore
+### 2. 🪝 Hook & Platform Writer — Amazon Bedrock Nova Pro
+- Generates 5 alternative hooks with engagement, clarity and strength scores
+- Rewrites raw content into platform-optimized posts for all 4 major platforms
+- Translates and culturally adapts content for Indian regional languages
 
-### 3. 🎨 Thumbnail Generator (AWS Bedrock + S3)
-- **AI Image Generation**: Amazon Nova Canvas for high-quality thumbnails
-- **Platform Optimization**: Auto-resize for YouTube, Instagram, LinkedIn, Twitter
-- **S3 Storage**: Permanent storage with public CDN URLs
-- **FREE Tier**: 300 images/month free for 3 months
+### 3. 📈 Trend Intelligence — Amazon Bedrock Nova Lite
+- Discovers trending hashtags, viral topics and content formats by niche
+- AI Idea Calendar with daily/weekly content plans
+- Intelligent scheduling with optimal posting time recommendations
 
-### 4. 👤 Profile Management (Firebase)
-- **User Authentication**: Firebase Auth with email/password
-- **Profile Analytics**: Performance graphs and engagement tracking
-- **Social Media Links**: Multi-platform account management
-- **Avatar Upload**: Profile customization
+### 4. 🎨 Thumbnail Generator — Amazon Nova Canvas + Amazon S3
+- AI-powered thumbnail generation from text prompts
+- Platform-specific sizing: YouTube (1280×720), Instagram (1080×1080), LinkedIn (1200×627)
+- Permanent storage in Amazon S3 with public CDN URLs
+- Multiple styles: Bold, Minimal, Cinematic, Professional
+
+### 5. 🛡️ Safety & Copyright Scanner — Amazon Comprehend
+- Real-time toxicity detection before publishing
+- Sentiment analysis and dominant language detection
+- Copyright risk scoring (High/Medium/Low)
+- Accessibility and readability analysis
+
+### 6. 💰 Monetization Predictor — Amazon Bedrock Nova Pro
+- Predicts monetization potential by niche + platform + audience size
+- Promotional timing advisor for maximum ROI
+- Comment sentiment and moderation at scale
 
 ---
 
 ## 🛠️ Tech Stack
 
+### Cloud & Backend
+| Technology | Purpose |
+|-----------|---------|
+| **Amazon Bedrock** | Core AI inference engine |
+| **AWS Lambda (Node.js 24.x)** | Serverless backend |
+| **AWS API Gateway** | REST API management |
+| **Amazon S3** | Object storage |
+| **Amazon Comprehend** | NLP & content safety |
+| **Amazon DynamoDB** | Usage logs & metadata |
+| **Amazon CloudWatch** | Monitoring & alerting |
+
 ### Frontend
 | Technology | Purpose |
 |-----------|---------|
-| **React 18** | UI framework |
-| **TypeScript** | Type safety |
-| **Vite** | Build tool & dev server |
-| **Tailwind CSS** | Styling |
-| **shadcn/ui** | Component library |
-| **Recharts** | Data visualization |
-
-### Backend & Cloud
-| Technology | Purpose |
-|-----------|---------|
-| **AWS Bedrock** | AI/ML inference |
-| **AWS Lambda** | Serverless compute |
-| **Amazon S3** | Object storage |
-| **API Gateway** | REST API |
-| **Firebase Auth** | Authentication |
-| **Firestore** | NoSQL database |
+| React 18 + TypeScript | UI framework |
+| Vite | Build tool |
+| Tailwind CSS | Styling |
+| shadcn/ui | Component library |
+| Recharts | Data visualization |
 
 ### AI Models
-| Model | Use Case | Provider |
-|-------|----------|----------|
-| **Amazon Nova Lite v1** | Text generation (trends, ideas, scheduling) | AWS Bedrock |
-| **Amazon Nova Canvas v1** | Image generation (thumbnails) | AWS Bedrock |
+| Model | Use Case |
+|-------|---------|
+| **Amazon Nova Pro v1** | Content analysis, hooks, writing, translation |
+| **Amazon Nova Lite v1** | Trends, ideas, scheduling |
+| **Amazon Nova Canvas v1** | Thumbnail image generation |
 
 ---
 
@@ -185,256 +173,155 @@ User Input → API Gateway → Lambda → Bedrock AI → Response
 
 ### Prerequisites
 - Node.js 18+ and npm
-- AWS Account with Bedrock access
-- Firebase project
+- AWS Account with Bedrock model access enabled
 - Git
 
-### Local Development Setup
+### Local Development
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-repo/creator-copilot.git
-   cd creator-copilot
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/your-repo/creator-copilot.git
+cd creator-copilot
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. **Configure environment variables**
-   
-   Create `.env.local`:
-   ```bash
-   # AWS
-   VITE_AWS_API_URL=https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
-   
-   # Firebase
-   VITE_FIREBASE_API_KEY=your_firebase_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Access the application**
-   - Frontend: http://localhost:8080
-
----
-
-## ☁️ AWS Deployment
-
-### Lambda Functions
-
-We have deployed **5 Lambda functions** on AWS:
-
-| Function Name | Runtime | Memory | Timeout | Purpose |
-|--------------|---------|--------|---------|---------|
-| `trendAnalyzer` | Node.js 20.x | 512 MB | 30s | Discover trending hashtags |
-| `contentIdeaGenerator` | Node.js 20.x | 512 MB | 30s | Generate content ideas |
-| `schedulingIntelligence` | Node.js 20.x | 512 MB | 30s | Recommend posting times |
-| `generateThumbnail` | Node.js 20.x | 512 MB | 60s | Create AI thumbnails |
-| `saveThumbnailToS3` | Node.js 20.x | 512 MB | 30s | Save thumbnails to S3 |
-
-### API Endpoints
-
-```
-Base URL: https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
-
-POST /trendAnalyzer           - Analyze trends
-POST /contentIdeaGenerator    - Generate content ideas
-POST /schedulingIntelligence  - Get posting recommendations
-POST /generateThumbnail       - Create AI thumbnail
-POST /save-thumbnail          - Save thumbnail to S3
+# Configure environment variables
+cp .env.example .env.local
 ```
 
-### S3 Bucket Configuration
+### Environment Variables
 
+```env
+# AWS Configuration
+VITE_AWS_API_URL=https://your-api-id.execute-api.us-east-1.amazonaws.com/prod
+AWS_REGION=us-east-1
 ```
-Bucket Name: creator-copilot-thumbnails
-Region: us-east-1
-Access: Public read for images
-Policy: Bucket policy for public GetObject
-```
 
-### Deployment Guides
-
-- **Manual Setup**: See `AWS_MANUAL_DEPLOYMENT.md`
-- **Thumbnail Setup**: See `POLLINATIONS_S3_SETUP.md`
-- **Trends Setup**: See `AWS_TRENDS_SETUP.md`
-
----
-
-## 📁 Project Structure
-
-```
-creator-copilot/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── ui/             # shadcn/ui components
-│   │   └── PillTabs.tsx    # Custom tab component
-│   ├── contexts/           # React contexts
-│   │   └── AuthContext.tsx # Firebase auth context
-│   ├── hooks/              # Custom React hooks
-│   │   └── use-toast.ts    # Toast notifications
-│   ├── lib/                # Utility libraries
-│   │   ├── firebase.ts     # Firebase config
-│   │   ├── trendsApi.ts    # AWS Trends API
-│   │   └── thumbnailApi.ts # AWS Thumbnail API
-│   ├── pages/              # Application pages
-│   │   ├── Auth.tsx        # Authentication
-│   │   ├── Profile.tsx     # User profile
-│   │   ├── ContentAnalyzer.tsx  # Content analysis
-│   │   ├── TrendsCalendar.tsx   # Trends & scheduling
-│   │   └── ThumbnailGenerator.tsx # Thumbnail creation
-│   └── App.tsx             # Main app component
-├── lambda/                 # AWS Lambda functions
-│   ├── trendAnalyzer.mjs
-│   ├── contentIdeaGenerator.mjs
-│   ├── schedulingIntelligence.mjs
-│   ├── generateThumbnail.mjs
-│   └── saveThumbnailToS3.mjs
-├── public/                 # Static assets
-├── .env.local             # Environment variables (not in git)
-└── README.md              # This file
+```bash
+# Start development server
+npm run dev
+# App runs at http://localhost:8080
 ```
 
 ---
 
-## 💰 Cost Analysis
+## ⚡ Lambda Functions
 
-### AWS Free Tier Benefits
-
-| Service | Free Tier | Our Usage | Cost |
-|---------|-----------|-----------|------|
-| **Amazon Bedrock (Nova)** | 300 images/month (3 months) | ~100 images/month | $0 |
-| **AWS Lambda** | 1M requests/month | ~10K requests/month | $0 |
-| **API Gateway** | 1M requests/month | ~10K requests/month | $0 |
-| **Amazon S3** | 5GB storage, 20K GET | ~100MB, 1K GET | $0 |
-| **CloudWatch Logs** | 5GB ingestion | ~100MB | $0 |
-
-**Total Monthly Cost**: **$0** (within free tier limits)
-
----
-
-## 🎓 Learning Outcomes
-
-### AWS Skills Demonstrated
-- ✅ Amazon Bedrock AI model integration (Nova Lite, Nova Canvas)
-- ✅ AWS Lambda serverless architecture
-- ✅ API Gateway REST API design
-- ✅ S3 bucket configuration and policies
-- ✅ IAM role and policy management
-- ✅ CloudWatch monitoring and logging
-
-### Development Skills
-- ✅ React 18 with TypeScript
-- ✅ Serverless architecture patterns
-- ✅ RESTful API integration
-- ✅ Firebase authentication and Firestore
-- ✅ Responsive UI design with Tailwind CSS
-- ✅ State management with React Context
+| Function | Runtime | Purpose | Bedrock Model |
+|----------|---------|---------|---------------|
+| `analyzeContent` | Node.js 24.x | Content quality analysis | Nova Pro |
+| `generateHook` | Node.js 24.x | Hook & title generation | Nova Pro |
+| `generateAssembly` | Node.js 24.x | Platform content writing | Nova Pro |
+| `translateContent` | Node.js 24.x | Language & cultural adaptation | Nova Pro |
+| `findTrends` | Node.js 24.x | Trend discovery | Nova Lite |
+| `generateCalendar` | Node.js 24.x | AI content calendar | Nova Lite |
+| `safetyCheck` | Node.js 24.x | Copyright & toxicity scan | Comprehend |
+| `saveThumbnailToS3` | Node.js 24.x | Thumbnail storage | S3 |
 
 ---
 
-## 👥 Contributors
+## 🔌 API Endpoints
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/identicons/mkishore.png" width="100px;" alt="M Kishore"/><br />
-      <sub><b>M Kishore</b></sub><br />
-      <sub>Full Stack Developer</sub><br />
-      <sub>AWS Integration & Backend</sub>
-    </td>
-    <td align="center">
-      <img src="https://github.com/identicons/chvsneha.png" width="100px;" alt="CH V Sneha"/><br />
-      <sub><b>CH V Sneha</b></sub><br />
-      <sub>Full Stack Developer</sub><br />
-      <sub>Frontend & UI/UX</sub>
-    </td>
-  </tr>
-</table>
+**Base URL:** `https://your-api-id.execute-api.us-east-1.amazonaws.com/prod`
 
-### Contributions
-- **M Kishore**: AWS Bedrock integration, Lambda functions, API Gateway setup, S3 configuration
-- **CH V Sneha**: React frontend, UI/UX design, Firebase integration, component architecture
+```
+POST /analyze              → Content quality analysis
+POST /generate-hook        → Hook & title generation
+POST /generate-assembly    → Platform content writing
+POST /translate-content    → Language adaptation
+POST /find-trends          → Trend discovery
+POST /generate-calendar    → AI content calendar
+POST /safety-check         → Copyright & toxicity scan
+POST /save-thumbnail       → Save thumbnail to S3
+```
 
 ---
 
 ## 📊 Performance Metrics
 
-### Response Times
-- Content Analysis: **< 2 seconds**
-- Trend Discovery: **< 3 seconds**
-- Thumbnail Generation: **< 5 seconds**
-- Scheduling Intelligence: **< 2 seconds**
+| Feature | Response Time | AWS Service |
+|---------|--------------|-------------|
+| Content Analysis | < 3 seconds | Bedrock Nova Pro |
+| Hook Generation | < 3 seconds | Bedrock Nova Pro |
+| Platform Writing | < 4 seconds | Bedrock Nova Pro |
+| Trend Discovery | < 3 seconds | Bedrock Nova Lite |
+| Safety Scan | < 2 seconds | Amazon Comprehend |
+| Thumbnail Generation | < 5 seconds | Nova Canvas + S3 |
 
-### Scalability
-- **Concurrent Users**: 1000+ (Lambda auto-scaling)
-- **API Rate Limit**: 10,000 requests/second (API Gateway)
-- **Storage**: Unlimited (S3)
+**Scalability:**
+- Concurrent Users: 10,000+ (Lambda auto-scaling)
+- API Rate Limit: 10,000 requests/second (API Gateway)
+- Storage: Unlimited (Amazon S3)
+- Zero downtime — fully serverless
 
 ---
 
-## 🔒 Security Features
+## 💰 AWS Cost Analysis
 
-- ✅ Firebase Authentication with email/password
-- ✅ IAM least-privilege policies
+| Service | Free Tier | Monthly Usage | Cost |
+|---------|-----------|---------------|------|
+| Amazon Bedrock (Nova) | Pay per token | ~50K tokens | ~$0.50 |
+| AWS Lambda | 1M requests/month | ~10K requests | **$0** |
+| API Gateway | 1M requests/month | ~10K requests | **$0** |
+| Amazon S3 | 5GB storage | ~500MB | **$0** |
+| Amazon Comprehend | 50K units/month | ~5K units | **$0** |
+| Amazon DynamoDB | 25GB free | ~1MB | **$0** |
+| CloudWatch | 5GB logs | ~100MB | **$0** |
+
+**Estimated Monthly Cost: < $1** (within free tier for hackathon)
+
+---
+
+## 🔒 Security
+
+- ✅ IAM least-privilege policies per Lambda function
 - ✅ API Gateway CORS configuration
-- ✅ Environment variable protection
-- ✅ S3 bucket policies for public read-only
-- ✅ CloudWatch logging for audit trails
+- ✅ Environment variable protection (never in code)
+- ✅ S3 bucket policies for public read-only on thumbnails
+- ✅ CloudWatch logging for complete audit trails
+- ✅ AWS WAF rate limiting on API Gateway
+
+---
+
+## 🎓 AWS Skills Demonstrated
+
+- ✅ Amazon Bedrock multi-model integration (Nova Pro, Nova Lite, Nova Canvas)
+- ✅ AWS Lambda serverless architecture (8 functions)
+- ✅ API Gateway REST API design with CORS
+- ✅ S3 bucket configuration, policies and CDN delivery
+- ✅ Amazon Comprehend NLP integration
+- ✅ DynamoDB table design and PutItem operations
+- ✅ IAM role and least-privilege policy management
+- ✅ CloudWatch monitoring and logging
+
+---
+
+## 👥 Contributors
+
+| Name | Role | Contributions |
+|------|------|---------------|
+| **M Kishore** | Full Stack + AWS | Amazon Bedrock integration, Lambda functions, API Gateway, S3, Comprehend, DynamoDB |
+| **CH V Sneha** | Full Stack + UI | React frontend, UI/UX design, component architecture, Firebase integration |
 
 ---
 
 ## 🚀 Future Enhancements
 
-- [ ] Multi-language support
-- [ ] Advanced analytics dashboard
-- [ ] Social media post automation
-- [ ] Team collaboration features
-- [ ] Mobile app (React Native)
-- [ ] AI video script generation
-- [ ] Competitor analysis dashboard
+- [ ] Amazon Rekognition for advanced image copyright detection
+- [ ] AWS Cognito for enterprise authentication
+- [ ] Amazon SageMaker for custom ML monetization models
+- [ ] Multi-language support with Amazon Translate
+- [ ] Mobile app with AWS Amplify
+- [ ] Real-time collaboration with AWS AppSync
 
 ---
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ---
 
-## 🙏 Acknowledgments
-
-- **AWS** for providing Bedrock AI services and cloud infrastructure
-- **Firebase** for authentication and database services
-- **shadcn/ui** for beautiful UI components
-- **Recharts** for data visualization
-- **Lucide** for icon library
-
----
-
-## 📧 Contact
-
-For questions, feedback, or support:
-- 📧 Email: support@creatorcopilot.com
-- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/creator-copilot/issues)
-- 📖 Documentation: See `/docs` folder
-
----
-
-<div align="center">
-
-**Built with ❤️ using AWS, React, and TypeScript**
-
-**Empowering Content Creators Worldwide** 🌍
-
-</div>
+> **Built for AWS AI for Bharat Hackathon**
+> Empowering Indian Content Creators with AWS Cloud AI 🇮🇳
