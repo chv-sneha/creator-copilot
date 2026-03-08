@@ -13,6 +13,7 @@ import ContentAnalyzerBedrock from "./pages/ContentAnalyzerBedrock";
 import ContentAnalyzerComparison from "./pages/ContentAnalyzerComparison";
 import ContentStudio from "./pages/ContentStudio";
 import ThumbnailGenerator from "./pages/ThumbnailGenerator";
+import ThumbCraft from "./pages/ThumbCraft";
 import TrendsCalendar from "./pages/TrendsCalendar";
 import SafetyCopyright from "./pages/SafetyCopyright";
 import MonetizationEngagement from "./pages/MonetizationEngagement";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="analyzer-comparison" element={<ContentAnalyzerComparison />} />
               <Route path="studio" element={<ContentStudio />} />
               <Route path="thumbnail" element={<ThumbnailGenerator />} />
+              <Route path="thumbcraft" element={<ThumbCraft />} />
               <Route path="trends" element={<TrendsCalendar />} />
               <Route path="safety" element={<SafetyCopyright />} />
               <Route path="monetization" element={<MonetizationEngagement />} />

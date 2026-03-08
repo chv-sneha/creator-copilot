@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Thumbnail Editor Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-4">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">🎨 Thumbnail Editor Pro</h1>
+    
+    <div class="grid grid-cols-[300px_1fr_250px] gap-4">
+      <!-- Left Panel -->
+      <div class="space-y-4">
+        <!-- Text -->
+        <div class="bg-gray-800 p-4 rounded">
+          <h3 class="font-bold mb-2">Add Text</h3>
+          <input type="text" id="textInput" placeholder="Text" class="w-full bg-gray-700 p-2 rounded mb-2">
+          <input type="number" id="fontSize" value="60" class="w-full bg-gray-700 p-2 rounded mb-2">
+          <input type="color" id="textColor" value="#ffffff" class="w-full h-10 rounded mb-2">
+          <button onclick="addText()" class="w-full bg-blue-600 p-2 rounded">Add Text</button>
+        </div>
+        
+        <!-- Styling -->
+        <div class="bg-gray-800 p-4 rounded">
+          <h3 class="font-bold mb-2">Text Style</h3>
+          <button onclick="toggleBold()" id="boldBtn" class="bg-gray-700 px-4 py-2 rounded mr-2">Bold</button>
+          <button onclick="toggleOutline()" id="outlineBtn" class="bg-gray-700 px-4 py-2 rounded">Outline</button>
+          <input type="color" id="outlineColor" value="#000000" class="w-full h-10 rounded mt-2">
+        </div>
+        
+        <!-- Image -->
+        <div class="bg-gray-800 p-4 rounded">
+          <h3 class="font-bold mb-2">Add Image</h3>
+          <input type="file" id="imageInput" accept="image/*" class="w-full">
+        </div>
+        
+        <!-- Templates -->
+        <div class="bg-gray-800 p-4 rounded">
+          <h3 class="font-bold mb-2">Templates</h3>
+          <button onclick="applyTemplate('youtube')" class="w-full bg-red-600 p-2 rounded mb-2">YouTube</button>
+          <button onclick="applyTemplate('tech')" class="w-full bg-blue-600 p-2 rounded">Tech</button>
+        </div>
+      </div>
+      
+      <!-- Canvas -->
+      <div class="bg-gray-800 p-4 rounded">
+        <canvas id="canvas"></canvas>
+      </div>
+      
+      <!-- Right Panel -->
+      <div class="space-y-4">
+        <!-- Layers -->
+        <div class="bg-gray-800 p-4 rounded">
+          <h3 class="font-bold mb-2">Layers</h3>
+          <div id="layersList" class="space-y-1 mb-2"></div>
+          <button onclick="deleteSelected()" class="w-full bg-red-600 p-2 rounded">Delete</button>
+        </div>
+        
+        <!-- Properties -->
+        <div class="bg-gray-800 p-4 rounded">
+          <h3 class="font-bold mb-2">Properties</h3>
+          <label>Opacity</label>
+          <input type="range" id="opacitySlider" min="0" max="100" value="100" onchange="updateOpacity(this.value)" class="w-full">
+          <label>Rotation</label>
+          <input type="range" id="rotationSlider" min="0" max="360" value="0" onchange="updateRotation(this.value)" class="w-full">
+        </div>
+        
+        <!-- Save -->
+        <div class="bg-gray-800 p-4 rounded">
+          <button onclick="saveImage()" class="w-full bg-green-600 p-3 rounded font-bold">Save</button>
+          <button onclick="window.close()" class="w-full bg-gray-600 p-2 rounded mt-2">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let canvas;
+    const savedImage = localStorage.getItem('editImage');
+    
+    if (savedImage) {
+      const img = new Image();
+      img.onload = () => {
+        canvas = new fabric.Canvas('canvas', {
+          width: img.width,
+          height: img.height
+        });
+        
+        fabric.Image.fromURL(savedImage, (fabricImg) => {
+          fabricImg.set({ selectable: false, evented: false });
+          canvas.setBackgroundImage(fabricImg, canvas.renderAll.bind(canvas));
+        });
+        
+        setupListeners();
+      };
+      img.src = savedImage;
+      localStorage.removeItem('editImage');
+    }
+
+    function setupListeners() {
+      canvas.on('selection:created', updateLayers);
+      canvas.on('selection:updated', updateLayers);
+      canvas.on('selection:cleared', updateLayers);
+      canvas.on('object:added', updateLayers);
+      canvas.on('object:removed', updateLayers);
+      
+      document.getElementById('imageInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          fabric.Image.fromURL(event.target.result, (img) => {
+            img.scaleToWidth(300);
+            canvas.add(img);
+            canvas.setActiveObject(img);
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function addText() {
+      const text = document.getElementById('textInput').value || 'Text';
+      const size = parseInt(document.getElementById('fontSize').value);
+      const color = document.getElementById('textColor').value;
+      
+      const textObj = new fabric.Text(text, {
+        left: canvas.width / 2,
+        top: canvas.height / 2,
+        fontSize: size,
+        fill: color,
+        fontFamily: 'Arial'
+      });
+      
+      canvas.add(textObj);
+      canvas.setActiveObject(textObj);
+      document.getElementById('textInput').value = '';
+    }
+
+    function toggleBold() {
+      const obj = canvas.getActiveObject();
+      if (obj && obj.type === 'text') {
+        obj.set('fontWeight', obj.fontWeight === 'bold' ? 'normal' : 'bold');
+        canvas.renderAll();
+        document.getElementById('boldBtn').style.background = obj.fontWeight === 'bold' ? '#2563eb' : '';
+      }
+    }
+
+    function toggleOutline() {
+      const obj = canvas.getActiveObject();
+      if (obj && obj.type === 'text') {
+        const color = document.getElementById('outlineColor').value;
+        if (obj.stroke) {
+          obj.set({ stroke: '', strokeWidth: 0 });
+          document.getElementById('outlineBtn').style.background = '';
+        } else {
+          obj.set({ stroke: color, strokeWidth: obj.fontSize / 15 });
+          document.getElementById('outlineBtn').style.background = '#2563eb';
+        }
+        canvas.renderAll();
+      }
+    }
+
+    function updateOpacity(value) {
+      const obj = canvas.getActiveObject();
+      if (obj) {
+        obj.set('opacity', value / 100);
+        canvas.renderAll();
+      }
+    }
+
+    function updateRotation(value) {
+      const obj = canvas.getActiveObject();
+      if (obj) {
+        obj.set('angle', value);
+        canvas.renderAll();
+      }
+    }
+
+    function deleteSelected() {
+      const obj = canvas.getActiveObject();
+      if (obj) canvas.remove(obj);
+    }
+
+    function updateLayers() {
+      const list = document.getElementById('layersList');
+      list.innerHTML = '';
+      canvas.getObjects().forEach((obj, i) => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600';
+        div.textContent = obj.type === 'text' ? `Text: ${obj.text.substring(0, 15)}` : 'Image';
+        div.onclick = () => canvas.setActiveObject(obj);
+        list.appendChild(div);
+      });
+    }
+
+    function applyTemplate(type) {
+      if (type === 'youtube') {
+        const text = new fabric.Text('CLICK HERE', {
+          left: canvas.width / 2,
+          top: 100,
+          fontSize: 80,
+          fill: '#ffffff',
+          stroke: '#000000',
+          strokeWidth: 5,
+          fontWeight: 'bold',
+          fontFamily: 'Impact'
+        });
+        canvas.add(text);
+      } else if (type === 'tech') {
+        const text = new fabric.Text('TECH REVIEW', {
+          left: canvas.width / 2,
+          top: 100,
+          fontSize: 70,
+          fill: '#00ff00',
+          stroke: '#000000',
+          strokeWidth: 4,
+          fontWeight: 'bold'
+        });
+        canvas.add(text);
+      }
+    }
+
+    function saveImage() {
+      const dataURL = canvas.toDataURL({ format: 'png', quality: 1 });
+      const link = document.createElement('a');
+      link.download = `thumbnail-${Date.now()}.png`;
+      link.href = dataURL;
+      link.click();
+    }
+  </script>
+</body>
+</html>

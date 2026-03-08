@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Image, Download, RefreshCw, Save, Copy, Check, ChevronDown, ChevronUp, Sparkles, Zap, Target, TrendingUp, Eye, Upload, Layers } from "lucide-react";
 import { generateThumbnail } from "@/lib/lambda";
@@ -76,6 +77,7 @@ const ThumbnailGenerator = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const mockGeneratedImage = "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1280&h=720&fit=crop";
   const mockPrompt = `Create a ${style.toLowerCase()} thumbnail for ${selectedPlatform} with ${colorScheme.toLowerCase()}. Title: "${videoTitle}". ${textOverlay ? `Main text: "${mainText}", Sub text: "${subText}".` : ''} Mood: ${selectedMood}. ${description}`;
@@ -89,8 +91,11 @@ const ThumbnailGenerator = () => {
       toast({ title: "Mode Required", description: "Please select a generation mode", variant: "destructive" });
       return;
     }
-    if (generationMode === "professional" && uploadedImages.length === 0) {
-      toast({ title: "Images Required", description: "Please upload at least one image for professional mode", variant: "destructive" });
+
+    // Navigate to ThumbCraft for professional mode
+    if (generationMode === "professional") {
+      navigate('/dashboard/thumbcraft');
+      toast({ title: "Opening ThumbCraft", description: "Professional thumbnail editor" });
       return;
     }
 
@@ -108,11 +113,17 @@ const ThumbnailGenerator = () => {
         mood: selectedMood
       });
       
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
       setGeneratedResult(response);
       setGenerated(true);
       toast({ title: "✅ Generated!", description: `Your ${generationMode} thumbnail is ready` });
     } catch (error) {
-      toast({ title: "Generation Failed", description: error instanceof Error ? error.message : "Try again", variant: "destructive" });
+      console.error('Generation error:', error);
+      const errorMsg = error instanceof Error ? error.message : "Generation failed. Please try again.";
+      toast({ title: "Generation Failed", description: errorMsg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -407,14 +418,37 @@ const ThumbnailGenerator = () => {
                 )}
                 {generatedResult?.mode === 'sample' && (
                   <div className="space-y-4">
-                    <h4 className="font-heading text-sm font-bold text-foreground">Sample Thumbnails</h4>
-                    {generatedResult.result.samples?.map((s: any, i: number) => (
-                      <div key={i} className="card-surface p-4">
-                        <img src={s.url} alt={s.description} className="w-full rounded mb-2" />
-                        <p className="text-xs text-muted-foreground">{s.description}</p>
-                        <p className="text-xs text-primary mt-1">Relevance: {s.relevance}%</p>
-                      </div>
-                    ))}
+                    <h4 className="font-heading text-sm font-bold text-foreground">Google Image Search Links</h4>
+                    <p className="text-xs text-muted-foreground">Click any link below to explore thumbnail inspiration on Google Images</p>
+                    {generatedResult.result.samples?.map((s: any, i: number) => {
+                      const cleanSearchTerm = s.searchTerm?.replace(/&quot;/g, '"').replace(/&amp;/g, '&') || 'thumbnail';
+                      const cleanDescription = s.description?.replace(/&quot;/g, '"').replace(/&amp;/g, '&') || 'Thumbnail inspiration';
+                      return (
+                        <a 
+                          key={i} 
+                          href={s.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="card-surface p-4 space-y-2 block hover:border-primary transition-all border border-border rounded-lg"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-foreground mb-1">{cleanSearchTerm}</p>
+                              <p className="text-xs text-muted-foreground">{cleanDescription}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-primary">Match: {s.relevance}%</span>
+                              <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })}
+                    {generatedResult.result.note && (
+                      <p className="text-xs text-muted-foreground italic p-3 bg-surface-input rounded">{generatedResult.result.note}</p>
+                    )}
                   </div>
                 )}
                 {generatedResult?.mode === 'professional' && (
@@ -459,7 +493,7 @@ const ThumbnailGenerator = () => {
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <div className="flex justify-between">
                       <span>Model Used:</span>
-                      <span className="text-foreground">Amazon Titan Image Generator v2</span>
+                      <span className="text-foreground">Amazon Nova Canvas v1</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Resolution:</span>
@@ -475,7 +509,7 @@ const ThumbnailGenerator = () => {
                     </div>
                     <div className="flex justify-between">
                       <span>Generation Time:</span>
-                      <span className="text-foreground">2.8s</span>
+                      <span className="text-foreground">~5s</span>
                     </div>
                   </div>
                 </div>
