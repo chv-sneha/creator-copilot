@@ -113,3 +113,18 @@ export const generateCalendar = async (data: {
   if (!response.ok) throw new Error('Calendar generation failed');
   return await response.json();
 };
+
+export const analyzeSafety = async (data: {
+  content: string;
+  platform: string;
+  contentType: string;
+}) => {
+  const response = await fetch(import.meta.env.VITE_LAMBDA_SAFETY_ANALYZER, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) throw new Error('Safety analysis failed');
+  return await response.json();
+};

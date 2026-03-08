@@ -1,22 +1,53 @@
 import { useState } from "react";
-import { Shield, FileCheck, Eye, AlertTriangle, CheckCircle } from "lucide-react";
+import { Shield, FileCheck, Eye, AlertTriangle, CheckCircle, Sparkles, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeSafety } from "@/lib/lambda";
 
-interface ScanResult {
+interface SafetyAnalysis {
+  overallScore: number;
   riskLevel: string;
-  copyrightIssues: Array<{ phrase: string; issue: string; alternative: string }>;
-  accessibilityScore: number;
-  accessibilityIssues: Array<{ word: string; issue: string; alternative: string }>;
-  originalityScore: number;
-  originalityNote: string;
-  recommendations: string[];
+  copyright: {
+    score: number;
+    status: string;
+    issues: string[];
+    suggestions: string[];
+  };
+  platformCompliance: {
+    score: number;
+    status: string;
+    issues: string[];
+    suggestions: string[];
+  };
+  accessibility: {
+    score: number;
+    status: string;
+    readabilityGrade: number;
+    sentenceLength: string;
+    issues: string[];
+    suggestions: string[];
+  };
+  languageSafety: {
+    score: number;
+    status: string;
+    toxicity: boolean;
+    issues: string[];
+    suggestions: string[];
+  };
+  plagiarism: {
+    score: number;
+    similarityRisk: number;
+    status: string;
+    possibleSources: string[];
+  };
+  safeRewrite: string;
 }
 
 const SafetyCopyright = () => {
   const [content, setContent] = useState("");
+  const [platform, setPlatform] = useState("YouTube");
+  const [contentType, setContentType] = useState("Video Description");
   const [loading, setLoading] = useState(false);
-  const [scanned, setScanned] = useState(false);
-  const [result, setResult] = useState<ScanResult | null>(null);
+  const [analysis, setAnalysis] = useState<SafetyAnalysis | null>(null);
   const { toast } = useToast();
 
   const handleScan = async () => {
@@ -31,19 +62,12 @@ const SafetyCopyright = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/scan-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+      const response = await analyzeSafety({ content, platform, contentType });
+      setAnalysis(response.analysis);
+      toast({
+        title: "✅ Analysis Complete",
+        description: `Safety Score: ${response.analysis.overallScore}/100`
       });
-
-      if (!response.ok) {
-        throw new Error('Scan failed');
-      }
-
-      const scanResult = await response.json();
-      setResult(scanResult);
-      setScanned(true);
     } catch (error) {
       console.error('Scan error:', error);
       toast({
@@ -56,24 +80,69 @@ const SafetyCopyright = () => {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    if (status === "Safe") return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (status === "Warning") return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+    return <AlertTriangle className="w-4 h-4 text-red-500" />;
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === "Safe") return "bg-green-500/10 text-green-500 border-green-500/20";
+    if (status === "Warning") return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+    return "bg-red-500/10 text-red-500 border-red-500/20";
+  };
+
   const getRiskColor = (risk: string) => {
-    if (risk === "Low Risk") return "bg-primary/10 text-primary";
-    if (risk === "Medium Risk") return "bg-yellow-500/10 text-yellow-500";
-    return "bg-destructive/10 text-destructive";
+    if (risk === "Low") return "bg-green-500/10 text-green-500";
+    if (risk === "Medium") return "bg-yellow-500/10 text-yellow-500";
+    return "bg-red-500/10 text-red-500";
+  };
+
+  const copyRewrite = () => {
+    if (analysis?.safeRewrite) {
+      navigator.clipboard.writeText(analysis.safeRewrite);
+      toast({ title: "Copied!", description: "Safe rewrite copied to clipboard" });
+    }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20 md:pb-0">
-      {/* Left — Copyright Shield */}
+      {/* Left — Input */}
       <div className="space-y-4">
         <div className="card-surface p-5 space-y-4">
           <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
-            Copyright Shield
+            Content Safety Analyzer
           </h3>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Platform</label>
+              <select value={platform} onChange={(e) => setPlatform(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none">
+                <option>YouTube</option>
+                <option>Instagram</option>
+                <option>LinkedIn</option>
+                <option>X (Twitter)</option>
+                <option>TikTok</option>
+                <option>Facebook</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Content Type</label>
+              <select value={contentType} onChange={(e) => setContentType(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-surface-input border border-border text-foreground text-sm focus:outline-none">
+                <option>Caption</option>
+                <option>Script</option>
+                <option>Blog Post</option>
+                <option>Tweet</option>
+                <option>Video Description</option>
+                <option>Post</option>
+              </select>
+            </div>
+          </div>
+
           <textarea
-            placeholder="Paste your content to scan for copyright risks..."
-            rows={8}
+            placeholder="Paste your content to scan for copyright, compliance, and safety risks..."
+            rows={10}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow transition-all resize-none"
@@ -83,138 +152,117 @@ const SafetyCopyright = () => {
           </button>
         </div>
 
-        {scanned && result && (
-          <>
-            <div className="card-surface p-5 animate-fade-in">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-sm text-muted-foreground">Risk Level:</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold ${getRiskColor(result.riskLevel)}`}>
-                  {result.riskLevel}
-                </span>
-              </div>
-              <div className="space-y-3">
-                {result.copyrightIssues.length > 0 ? (
-                  result.copyrightIssues.map((issue, i) => (
-                    <div key={i} className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-destructive font-medium">{issue.issue}: "{issue.phrase}"</p>
-                          <p className="text-xs text-muted-foreground mt-1">Safe alternative: {issue.alternative}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-foreground">No copyright issues detected!</p>
-                    </div>
-                  </div>
-                )}
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-foreground">{result.originalityNote}</p>
-                  </div>
-                </div>
-              </div>
+        {analysis && (
+          <div className="card-surface p-5 animate-fade-in">
+            <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Safe Rewrite
+            </h4>
+            <div className="p-3 rounded-lg bg-surface-input border border-border mb-3">
+              <p className="text-sm text-foreground">{analysis.safeRewrite}</p>
             </div>
-
-            <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-              <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                <FileCheck className="w-4 h-4 text-accent-blue" />
-                Originality Score
-              </h4>
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-1000"
-                    style={{ width: `${result.originalityScore}%` }}
-                  ></div>
-                </div>
-                <span className="text-2xl font-bold text-primary">{result.originalityScore}%</span>
-              </div>
-              <div className="p-3 rounded-lg bg-surface-input border border-border">
-                <p className="font-mono text-xs text-muted-foreground break-all">
-                  SHA-256: {Math.random().toString(36).substring(2, 15)}<br />
-                  Timestamp: {new Date().toISOString()}<br />
-                  Content ID: CC-{new Date().getFullYear()}-{Math.floor(Math.random() * 1000000)}
-                </p>
-              </div>
-            </div>
-
-            {result.recommendations.length > 0 && (
-              <div className="card-surface p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                <h4 className="font-heading text-sm font-bold text-foreground mb-3">Recommendations</h4>
-                <ul className="space-y-2">
-                  {result.recommendations.map((rec, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-muted-foreground">
-                      <span className="text-primary font-bold mt-0.5">•</span>
-                      <span className="flex-1">{rec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </>
+            <button onClick={copyRewrite} className="w-full py-2 rounded-lg bg-secondary border border-primary text-primary font-medium text-sm hover:bg-primary/10 transition-all flex items-center justify-center gap-2">
+              <Copy className="w-4 h-4" />Copy Safe Version
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Right — Language Safety */}
+      {/* Right — Results */}
       <div className="space-y-4">
-        <div className="card-surface p-5">
-          <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2 mb-4">
-            <Eye className="w-5 h-5 text-accent-blue" />
-            Language Safety & Accessibility
-          </h3>
-
-          {!scanned || !result ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Eye className="w-10 h-10 text-muted-foreground mb-3" />
-              <p className="text-muted-foreground text-sm">Scan your content on the left to see accessibility analysis here</p>
-            </div>
-          ) : (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Accessibility Score:</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-bold">
-                  {result.accessibilityScore}/10
+        {!analysis ? (
+          <div className="card-surface p-5 flex flex-col items-center justify-center py-12 text-center">
+            <Shield className="w-10 h-10 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground text-sm">Scan your content to see comprehensive safety analysis</p>
+          </div>
+        ) : (
+          <>
+            <div className="card-surface p-5 animate-fade-in">
+              <h4 className="font-heading text-sm font-bold text-foreground mb-3">Content Safety Report</h4>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-muted-foreground">Overall Safety Score</span>
+                <span className="text-3xl font-bold text-primary">{analysis.overallScore}/100</span>
+              </div>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-sm text-muted-foreground">Risk Level:</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-bold ${getRiskColor(analysis.riskLevel)}`}>
+                  {analysis.riskLevel} Risk
                 </span>
               </div>
-
+              
               <div className="space-y-3">
-                {result.accessibilityIssues.length > 0 ? (
-                  result.accessibilityIssues.map((issue, i) => (
-                    <div key={i} className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-yellow-400 font-medium">"{issue.word}" — {issue.issue}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Simpler: {issue.alternative}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-foreground">Content is accessible and easy to understand!</p>
-                    </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(analysis.copyright.status)}
+                    <span className="text-sm font-medium">Copyright Risk</span>
                   </div>
-                )}
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-foreground">Overall tone is inclusive and appropriate for all audiences.</p>
+                  <span className="text-sm font-bold">{analysis.copyright.score}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(analysis.languageSafety.status)}
+                    <span className="text-sm font-medium">Language Safety</span>
                   </div>
+                  <span className="text-sm font-bold">{analysis.languageSafety.score}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(analysis.accessibility.status)}
+                    <span className="text-sm font-medium">Accessibility</span>
+                  </div>
+                  <span className="text-sm font-bold">{analysis.accessibility.score}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(analysis.platformCompliance.status)}
+                    <span className="text-sm font-medium">Platform Compliance</span>
+                  </div>
+                  <span className="text-sm font-bold">{analysis.platformCompliance.score}</span>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="card-surface p-5 animate-fade-in">
+              <h4 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-primary" />
+                Plagiarism Check
+              </h4>
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div className="bg-primary h-2 rounded-full" style={{ width: `${100 - analysis.plagiarism.similarityRisk}%` }}></div>
+                </div>
+                <span className="text-xl font-bold text-primary">{analysis.plagiarism.score}%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Similarity Risk: {analysis.plagiarism.similarityRisk}%</p>
+            </div>
+
+            {(analysis.copyright.issues.length > 0 || analysis.platformCompliance.issues.length > 0 || analysis.accessibility.issues.length > 0) && (
+              <div className="card-surface p-5 animate-fade-in">
+                <h4 className="font-heading text-sm font-bold text-foreground mb-3">Issues Found</h4>
+                <div className="space-y-2">
+                  {[...analysis.copyright.issues, ...analysis.platformCompliance.issues, ...analysis.accessibility.issues].map((issue, i) => (
+                    <div key={i} className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-foreground">{issue}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="card-surface p-5 animate-fade-in">
+              <h4 className="font-heading text-sm font-bold text-foreground mb-3">Recommendations</h4>
+              <div className="space-y-2">
+                {[...analysis.copyright.suggestions, ...analysis.platformCompliance.suggestions, ...analysis.accessibility.suggestions].map((suggestion, i) => (
+                  <div key={i} className="flex gap-2 text-sm text-muted-foreground">
+                    <span className="text-primary font-bold mt-0.5">•</span>
+                    <span className="flex-1">{suggestion}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
