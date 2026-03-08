@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Image, Download, RefreshCw, Save, Copy, Check, ChevronDown, ChevronUp, Sparkles, Zap, Target, TrendingUp, Eye, Upload, Layers } from "lucide-react";
+import { generateThumbnail } from "@/lib/lambda";
 
 const platforms = [
   { name: "YouTube", size: "1280x720" },
@@ -71,6 +72,7 @@ const ThumbnailGenerator = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [generatedResult, setGeneratedResult] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const { toast } = useToast();
@@ -78,43 +80,42 @@ const ThumbnailGenerator = () => {
   const mockGeneratedImage = "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1280&h=720&fit=crop";
   const mockPrompt = `Create a ${style.toLowerCase()} thumbnail for ${selectedPlatform} with ${colorScheme.toLowerCase()}. Title: "${videoTitle}". ${textOverlay ? `Main text: "${mainText}", Sub text: "${subText}".` : ''} Mood: ${selectedMood}. ${description}`;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!videoTitle.trim()) {
-      toast({
-        title: "Title Required",
-        description: "Please enter a video title",
-        variant: "destructive"
-      });
+      toast({ title: "Title Required", description: "Please enter a video title", variant: "destructive" });
       return;
     }
-
     if (!generationMode) {
-      toast({
-        title: "Mode Required",
-        description: "Please select a generation mode",
-        variant: "destructive"
-      });
+      toast({ title: "Mode Required", description: "Please select a generation mode", variant: "destructive" });
       return;
     }
-
     if (generationMode === "professional" && uploadedImages.length === 0) {
-      toast({
-        title: "Images Required",
-        description: "Please upload at least one image for professional mode",
-        variant: "destructive"
-      });
+      toast({ title: "Images Required", description: "Please upload at least one image for professional mode", variant: "destructive" });
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setGenerated(true);
-      toast({
-        title: "Thumbnail Generated! 🎨",
-        description: `Your ${generationMode} thumbnail is ready`
+    try {
+      const response = await generateThumbnail({
+        mode: generationMode,
+        videoTitle,
+        description,
+        platform: selectedPlatform,
+        style,
+        colorScheme,
+        mainText: textOverlay ? mainText : undefined,
+        subText: textOverlay ? subText : undefined,
+        mood: selectedMood
       });
-    }, 3000);
+      
+      setGeneratedResult(response);
+      setGenerated(true);
+      toast({ title: "✅ Generated!", description: `Your ${generationMode} thumbnail is ready` });
+    } catch (error) {
+      toast({ title: "Generation Failed", description: error instanceof Error ? error.message : "Try again", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -388,16 +389,42 @@ const ThumbnailGenerator = () => {
               <div className="rounded-lg overflow-hidden min-h-[400px] bg-gradient-to-r from-surface-input via-primary/10 to-surface-input bg-[length:200%_100%] animate-shimmer"></div>
             ) : (
               <div className="space-y-4">
-                <div className="relative rounded-lg overflow-hidden">
-                  <img src={mockGeneratedImage} alt="Generated thumbnail" className="w-full" />
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">
-                      {platforms.find(p => p.name === selectedPlatform)?.size}
-                    </span>
-                    <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">{selectedPlatform}</span>
-                    <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">{style}</span>
+                {generatedResult?.mode === 'structure' && (
+                  <div className="card-surface p-5 space-y-4">
+                    <h4 className="font-heading text-sm font-bold text-foreground">Layout Guidelines</h4>
+                    <div className="space-y-3">
+                      <div><p className="text-xs text-muted-foreground mb-1">Composition</p><p className="text-sm text-foreground">{generatedResult.result.layout?.composition}</p></div>
+                      <div><p className="text-xs text-muted-foreground mb-1">Text Placement</p><p className="text-sm text-foreground">{generatedResult.result.layout?.textPlacement}</p></div>
+                      <div><p className="text-xs text-muted-foreground mb-1">Color Zones</p><p className="text-sm text-foreground">{generatedResult.result.layout?.colorZones}</p></div>
+                    </div>
+                    <div className="space-y-2">
+                      <h5 className="text-xs font-bold text-foreground">Design Guidelines</h5>
+                      {generatedResult.result.designGuidelines?.map((g: string, i: number) => (
+                        <p key={i} className="text-xs text-muted-foreground flex gap-2"><span className="text-primary">•</span>{g}</p>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+                {generatedResult?.mode === 'sample' && (
+                  <div className="space-y-4">
+                    <h4 className="font-heading text-sm font-bold text-foreground">Sample Thumbnails</h4>
+                    {generatedResult.result.samples?.map((s: any, i: number) => (
+                      <div key={i} className="card-surface p-4">
+                        <img src={s.url} alt={s.description} className="w-full rounded mb-2" />
+                        <p className="text-xs text-muted-foreground">{s.description}</p>
+                        <p className="text-xs text-primary mt-1">Relevance: {s.relevance}%</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {generatedResult?.mode === 'professional' && (
+                  <div className="relative rounded-lg overflow-hidden">
+                    <img src={`data:image/png;base64,${generatedResult.result.image}`} alt="Generated thumbnail" className="w-full" />
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      <span className="px-2 py-1 bg-black/70 text-white text-xs rounded">{platforms.find(p => p.name === selectedPlatform)?.size}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
