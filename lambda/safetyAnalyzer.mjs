@@ -1,6 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || "us-east-1" });
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || "creator-copilot-safety";
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -109,10 +115,41 @@ SCORING RULES:
 
     console.log('✅ Safety analysis complete');
 
+    const timestamp = new Date().toISOString();
+    const safetyId = `safety-${Date.now()}`;
+
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        safetyId,
+        userId: body.userId || 'anonymous',
+        content,
+        platform,
+        contentType,
+        overallScore: analysis.overallScore,
+        riskLevel: analysis.riskLevel,
+        copyrightScore: analysis.copyright.score,
+        copyrightStatus: analysis.copyright.status,
+        platformComplianceScore: analysis.platformCompliance.score,
+        accessibilityScore: analysis.accessibility.score,
+        languageSafetyScore: analysis.languageSafety.score,
+        plagiarismScore: analysis.plagiarism.score,
+        issues: [
+          ...analysis.copyright.issues,
+          ...analysis.platformCompliance.issues,
+          ...analysis.accessibility.issues
+        ],
+        safeRewrite: analysis.safeRewrite,
+        moderationStatus: analysis.riskLevel === 'Low' ? 'approved' : 'pending',
+        createdAt: timestamp,
+        ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60)
+      }
+    }));
+
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ analysis })
+      body: JSON.stringify({ analysis, safetyId })
     };
   } catch (error) {
     console.error('❌ Error:', error);

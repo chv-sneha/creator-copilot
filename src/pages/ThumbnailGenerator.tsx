@@ -92,13 +92,6 @@ const ThumbnailGenerator = () => {
       return;
     }
 
-    // Navigate to ThumbCraft for professional mode
-    if (generationMode === "professional") {
-      navigate('/dashboard/thumbcraft');
-      toast({ title: "Opening ThumbCraft", description: "Professional thumbnail editor" });
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await generateThumbnail({
@@ -178,34 +171,17 @@ const ThumbnailGenerator = () => {
             </div>
 
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Video Title</label>
-              <input
-                type="text"
-                placeholder="e.g., 5 AI Tools That Changed My Life"
-                value={videoTitle}
-                onChange={(e) => setVideoTitle(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Content Description</label>
-              <textarea
-                rows={4}
-                placeholder="Describe what your video/post is about..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow resize-none"
-              />
-            </div>
-
-            <div>
               <label className="text-sm text-muted-foreground mb-3 block font-medium">Generation Mode</label>
               <div className="grid grid-cols-1 gap-3">
                 {generationModes.map((mode) => (
                   <button
                     key={mode.id}
-                    onClick={() => setGenerationMode(mode.id)}
+                    onClick={() => {
+                      setGenerationMode(mode.id);
+                      if (mode.id === "professional") {
+                        navigate('/dashboard/thumbcraft');
+                      }
+                    }}
                     className={`p-4 rounded-lg border text-left transition-all ${
                       generationMode === mode.id
                         ? "bg-primary/10 border-primary"
@@ -229,6 +205,28 @@ const ThumbnailGenerator = () => {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Video Title</label>
+              <input
+                type="text"
+                placeholder="e.g., 5 AI Tools That Changed My Life"
+                value={videoTitle}
+                onChange={(e) => setVideoTitle(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Content Description</label>
+              <textarea
+                rows={4}
+                placeholder="Describe what your video/post is about..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-surface-input border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none input-glow resize-none"
+              />
             </div>
 
             {generationMode === "professional" && (
@@ -367,23 +365,25 @@ const ThumbnailGenerator = () => {
               </div>
             </div>
 
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent"></div>
-                  <span>Generating with AWS Titan...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate Thumbnail
-                </>
-              )}
-            </button>
+            {generationMode !== "professional" && (
+              <button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent"></div>
+                    <span>Generating with AWS Titan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate Thumbnail
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 

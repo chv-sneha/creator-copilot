@@ -927,9 +927,9 @@ class UIController {
   editSelected() {
     const thumbnail = this.thumbnailGenerator.getSelected();
     if (thumbnail) {
-      // Save to localStorage and open editor
+      // Save to localStorage and navigate to editor route
       localStorage.setItem('editImage', thumbnail.dataURL);
-      window.open('editor.html', '_blank', 'width=1400,height=900');
+      window.location.href = '/dashboard/thumbcraft/editor';
     }
   }
 

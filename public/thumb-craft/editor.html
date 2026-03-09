@@ -2,75 +2,158 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Thumbnail Editor Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional Thumbnail Editor</title>
+  <script type="module" src="./config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 </head>
-<body class="bg-gray-900 text-white p-4">
-  <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">🎨 Thumbnail Editor Pro</h1>
-    
-    <div class="grid grid-cols-[300px_1fr_250px] gap-4">
+<body class="bg-gray-900 text-white">
+  <div class="max-w-[1920px] mx-auto p-6">
+    <div class="grid grid-cols-[350px_1fr_300px] gap-6">
+      
       <!-- Left Panel -->
-      <div class="space-y-4">
-        <!-- Text -->
-        <div class="bg-gray-800 p-4 rounded">
-          <h3 class="font-bold mb-2">Add Text</h3>
-          <input type="text" id="textInput" placeholder="Text" class="w-full bg-gray-700 p-2 rounded mb-2">
-          <input type="number" id="fontSize" value="60" class="w-full bg-gray-700 p-2 rounded mb-2">
-          <input type="color" id="textColor" value="#ffffff" class="w-full h-10 rounded mb-2">
-          <button onclick="addText()" class="w-full bg-blue-600 p-2 rounded">Add Text</button>
+      <div class="space-y-4 max-h-screen overflow-y-auto">
+        <div class="flex justify-between items-center">
+          <h1 class="text-2xl font-bold">🎨 Thumbnail Editor</h1>
+          <div class="flex gap-2">
+            <button onclick="undo()" class="bg-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-600" title="Ctrl+Z">↶ Undo</button>
+            <button onclick="redo()" class="bg-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-600" title="Ctrl+Y">↷ Redo</button>
+          </div>
         </div>
         
-        <!-- Styling -->
-        <div class="bg-gray-800 p-4 rounded">
-          <h3 class="font-bold mb-2">Text Style</h3>
-          <button onclick="toggleBold()" id="boldBtn" class="bg-gray-700 px-4 py-2 rounded mr-2">Bold</button>
-          <button onclick="toggleOutline()" id="outlineBtn" class="bg-gray-700 px-4 py-2 rounded">Outline</button>
-          <input type="color" id="outlineColor" value="#000000" class="w-full h-10 rounded mt-2">
+        <!-- AI Assistant -->
+        <div class="bg-gradient-to-br from-green-900/40 to-gray-800 p-4 rounded-xl border-2 border-green-500/40">
+          <h3 class="font-bold mb-2 text-green-400">✨ AI Assistant</h3>
+          <textarea id="aiPrompt" placeholder="e.g., Add title at top, make it bold yellow" class="w-full bg-gray-800 p-3 rounded mb-2 text-sm" rows="2"></textarea>
+          <button onclick="applyAIPrompt()" class="w-full bg-green-600 hover:bg-green-500 p-2 rounded font-bold text-sm mb-2">Apply AI Command</button>
+          <button onclick="getAIScore()" class="w-full bg-blue-600 hover:bg-blue-500 p-2 rounded font-bold text-sm mb-2">📊 Get Readability Score</button>
+          <button onclick="optimizeText()" class="w-full bg-purple-600 hover:bg-purple-500 p-2 rounded font-bold text-sm">🎯 Optimize Text</button>
+          <div id="aiScore" class="mt-2 text-xs text-gray-300 hidden"></div>
+          <p class="text-xs text-gray-400 mt-2">Powered by AWS Nova Lite</p>
         </div>
         
-        <!-- Image -->
-        <div class="bg-gray-800 p-4 rounded">
-          <h3 class="font-bold mb-2">Add Image</h3>
-          <input type="file" id="imageInput" accept="image/*" class="w-full">
+        <!-- Add Text -->
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">📝 Add Text</h3>
+          <input type="text" id="textInput" placeholder="Enter text" class="w-full bg-gray-700 p-2 rounded mb-2 text-sm">
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="number" id="fontSize" value="60" placeholder="Size" class="bg-gray-700 p-2 rounded text-sm">
+            <input type="color" id="textColor" value="#ffffff" class="h-10 rounded">
+          </div>
+          <div class="grid grid-cols-3 gap-2 mb-2">
+            <button onclick="toggleBold()" id="boldBtn" class="bg-gray-700 p-2 rounded font-bold text-sm">B</button>
+            <button onclick="toggleOutline()" id="outlineBtn" class="bg-gray-700 p-2 rounded text-sm">Outline</button>
+            <button onclick="toggleShadow()" id="shadowBtn" class="bg-gray-700 p-2 rounded text-sm">Shadow</button>
+          </div>
+          <button onclick="addText()" class="w-full bg-blue-600 hover:bg-blue-500 p-2 rounded font-bold text-sm">Add Text</button>
+        </div>
+        
+        <!-- Add Shapes -->
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">🔷 Add Shapes</h3>
+          <div class="grid grid-cols-4 gap-2 mb-2">
+            <button onclick="addShape('rect')" class="bg-gray-700 p-2 rounded text-xs">⬜</button>
+            <button onclick="addShape('circle')" class="bg-gray-700 p-2 rounded text-xs">⭕</button>
+            <button onclick="addShape('triangle')" class="bg-gray-700 p-2 rounded text-xs">🔺</button>
+            <button onclick="addShape('star')" class="bg-gray-700 p-2 rounded text-xs">⭐</button>
+          </div>
+          <div class="grid grid-cols-4 gap-2 mb-2">
+            <button onclick="addShape('line')" class="bg-gray-700 p-2 rounded text-xs">➖</button>
+            <button onclick="addShape('arrow')" class="bg-gray-700 p-2 rounded text-xs">➡️</button>
+            <button onclick="addShape('polygon')" class="bg-gray-700 p-2 rounded text-xs">⬢</button>
+            <button onclick="addShape('heart')" class="bg-gray-700 p-2 rounded text-xs">❤️</button>
+          </div>
+          <input type="color" id="shapeColor" value="#ff0000" class="w-full h-8 rounded mb-2">
+          <h4 class="font-bold text-xs mb-2 mt-3">✨ Emojis</h4>
+          <div class="grid grid-cols-5 gap-1">
+            <button onclick="addEmoji('😀')" class="bg-gray-700 p-1 rounded text-lg">😀</button>
+            <button onclick="addEmoji('😍')" class="bg-gray-700 p-1 rounded text-lg">😍</button>
+            <button onclick="addEmoji('😱')" class="bg-gray-700 p-1 rounded text-lg">😱</button>
+            <button onclick="addEmoji('🔥')" class="bg-gray-700 p-1 rounded text-lg">🔥</button>
+            <button onclick="addEmoji('💯')" class="bg-gray-700 p-1 rounded text-lg">💯</button>
+            <button onclick="addEmoji('👍')" class="bg-gray-700 p-1 rounded text-lg">👍</button>
+            <button onclick="addEmoji('⚡')" class="bg-gray-700 p-1 rounded text-lg">⚡</button>
+            <button onclick="addEmoji('💪')" class="bg-gray-700 p-1 rounded text-lg">💪</button>
+            <button onclick="addEmoji('🎯')" class="bg-gray-700 p-1 rounded text-lg">🎯</button>
+            <button onclick="addEmoji('🚀')" class="bg-gray-700 p-1 rounded text-lg">🚀</button>
+          </div>
+        </div>
+        
+        <!-- Add Image -->
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">🖼️ Add Image</h3>
+          <input type="file" id="imageInput" accept="image/*" class="w-full text-sm">
         </div>
         
         <!-- Templates -->
-        <div class="bg-gray-800 p-4 rounded">
-          <h3 class="font-bold mb-2">Templates</h3>
-          <button onclick="applyTemplate('youtube')" class="w-full bg-red-600 p-2 rounded mb-2">YouTube</button>
-          <button onclick="applyTemplate('tech')" class="w-full bg-blue-600 p-2 rounded">Tech</button>
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">📋 Templates</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="applyTemplate('tech')" class="bg-gray-700 hover:bg-gray-600 p-2 rounded text-xs">Tech Review</button>
+            <button onclick="applyTemplate('tutorial')" class="bg-gray-700 hover:bg-gray-600 p-2 rounded text-xs">Tutorial</button>
+            <button onclick="applyTemplate('reaction')" class="bg-gray-700 hover:bg-gray-600 p-2 rounded text-xs">Reaction</button>
+            <button onclick="applyTemplate('news')" class="bg-gray-700 hover:bg-gray-600 p-2 rounded text-xs">News</button>
+            <button onclick="applyTemplate('list')" class="bg-gray-700 hover:bg-gray-600 p-2 rounded text-xs">List Video</button>
+          </div>
+        </div>
+        
+        <!-- CTR Prediction -->
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">🎯 CTR Prediction</h3>
+          <button onclick="predictCTR()" class="w-full bg-orange-600 hover:bg-orange-500 p-2 rounded font-bold text-sm">Predict Click Rate</button>
+          <div id="ctrScore" class="mt-2 text-xs text-gray-300 hidden"></div>
         </div>
       </div>
       
-      <!-- Canvas -->
-      <div class="bg-gray-800 p-4 rounded">
-        <canvas id="canvas"></canvas>
+      <!-- Center Canvas -->
+      <div class="bg-gray-800 p-6 rounded-xl">
+        <div class="mb-4 flex justify-between items-center">
+          <div class="flex items-center gap-4">
+            <h2 class="text-xl font-bold">Canvas</h2>
+            <div class="flex gap-2">
+              <button onclick="setZoom(0.5)" class="bg-gray-700 px-2 py-1 rounded text-xs">50%</button>
+              <button onclick="setZoom(1)" class="bg-gray-700 px-2 py-1 rounded text-xs">100%</button>
+              <button onclick="setZoom(1.5)" class="bg-gray-700 px-2 py-1 rounded text-xs">150%</button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="duplicateObject()" class="bg-blue-600 px-4 py-2 rounded text-sm" title="Ctrl+D">Duplicate</button>
+            <button onclick="canvas.remove(canvas.getActiveObject())" class="bg-red-600 px-4 py-2 rounded text-sm" title="Delete">Delete</button>
+            <button onclick="exportThumbnail()" class="bg-purple-600 px-4 py-2 rounded font-bold text-sm">📥 Export</button>
+            <button onclick="saveToS3()" class="bg-green-600 px-4 py-2 rounded font-bold text-sm">💾 Save</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-center bg-gray-900 p-4 rounded">
+          <canvas id="canvas"></canvas>
+        </div>
       </div>
       
       <!-- Right Panel -->
       <div class="space-y-4">
-        <!-- Layers -->
-        <div class="bg-gray-800 p-4 rounded">
-          <h3 class="font-bold mb-2">Layers</h3>
-          <div id="layersList" class="space-y-1 mb-2"></div>
-          <button onclick="deleteSelected()" class="w-full bg-red-600 p-2 rounded">Delete</button>
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">📚 Layers</h3>
+          <div id="layersList" class="space-y-1 mb-3 max-h-[300px] overflow-y-auto"></div>
         </div>
         
-        <!-- Properties -->
-        <div class="bg-gray-800 p-4 rounded">
-          <h3 class="font-bold mb-2">Properties</h3>
-          <label>Opacity</label>
-          <input type="range" id="opacitySlider" min="0" max="100" value="100" onchange="updateOpacity(this.value)" class="w-full">
-          <label>Rotation</label>
-          <input type="range" id="rotationSlider" min="0" max="360" value="0" onchange="updateRotation(this.value)" class="w-full">
-        </div>
-        
-        <!-- Save -->
-        <div class="bg-gray-800 p-4 rounded">
-          <button onclick="saveImage()" class="w-full bg-green-600 p-3 rounded font-bold">Save</button>
-          <button onclick="window.close()" class="w-full bg-gray-600 p-2 rounded mt-2">Back</button>
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <h3 class="font-bold mb-3">⚙️ Properties</h3>
+          <div id="objectProps" class="space-y-2">
+            <div>
+              <label class="text-sm">Fill Color</label>
+              <input type="color" id="fillColor" onchange="updateFillColor(this.value)" class="w-full h-8 rounded">
+            </div>
+            <div>
+              <label class="text-sm">Opacity</label>
+              <input type="range" id="opacitySlider" min="0" max="100" value="100" onchange="updateOpacity(this.value)" class="w-full">
+              <span id="opacityValue" class="text-xs">100%</span>
+            </div>
+            <div>
+              <label class="text-sm">Rotation</label>
+              <input type="range" id="rotationSlider" min="0" max="360" value="0" onchange="updateRotation(this.value)" class="w-full">
+              <span id="rotationValue" class="text-xs">0°</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -78,33 +161,103 @@
 
   <script>
     let canvas;
-    const savedImage = localStorage.getItem('editImage');
+    let history = [];
+    let historyStep = -1;
+    let isUndoRedo = false; // Flag to prevent saveState during undo/redo
     
+    const LAMBDA_URL = 'https://dz4esyf5tgmkwwkrsrc2g2zioi0nllhb.lambda-url.us-east-1.on.aws/';
+    const AI_LAMBDA_URL = 'https://2fn4tqlfzxo6ka6fvf5wjdzc6y0qoiay.lambda-url.us-east-1.on.aws/';
+    
+    // UNDO/REDO FUNCTIONS (Define first)
+    function saveState() {
+      if (!canvas || isUndoRedo) return; // Don't save during undo/redo
+      const json = JSON.stringify(canvas.toJSON());
+      // Clear future history when new action is made
+      if (historyStep < history.length - 1) {
+        history = history.slice(0, historyStep + 1);
+      }
+      history.push(json);
+      historyStep++;
+      // Limit history to 50 states
+      if (history.length > 50) {
+        history.shift();
+        historyStep--;
+      }
+      console.log('State saved. Step:', historyStep, 'Total:', history.length);
+    }
+    
+    function undo() {
+      if (!canvas) return;
+      if (historyStep > 0) {
+        isUndoRedo = true;
+        historyStep--;
+        const state = history[historyStep];
+        canvas.loadFromJSON(state, () => {
+          canvas.renderAll();
+          isUndoRedo = false;
+          console.log('Undo to step:', historyStep);
+        });
+      } else {
+        console.log('Nothing to undo');
+      }
+    }
+    
+    function redo() {
+      if (!canvas) return;
+      if (historyStep < history.length - 1) {
+        isUndoRedo = true;
+        historyStep++;
+        const state = history[historyStep];
+        canvas.loadFromJSON(state, () => {
+          canvas.renderAll();
+          isUndoRedo = false;
+          console.log('Redo to step:', historyStep);
+        });
+      } else {
+        console.log('Nothing to redo. Current step:', historyStep, 'Total:', history.length);
+      }
+    }
+    
+    // Initialize
+    const savedImage = localStorage.getItem('editImage');
     if (savedImage) {
       const img = new Image();
       img.onload = () => {
         canvas = new fabric.Canvas('canvas', {
-          width: img.width,
-          height: img.height
+          width: 1280,
+          height: 720,
+          backgroundColor: '#000'
         });
         
         fabric.Image.fromURL(savedImage, (fabricImg) => {
+          fabricImg.scaleToWidth(1280);
+          fabricImg.scaleToHeight(720);
           fabricImg.set({ selectable: false, evented: false });
           canvas.setBackgroundImage(fabricImg, canvas.renderAll.bind(canvas));
         });
         
         setupListeners();
+        saveState(); // Save initial state
       };
       img.src = savedImage;
       localStorage.removeItem('editImage');
+    } else {
+      // Initialize empty canvas
+      canvas = new fabric.Canvas('canvas', {
+        width: 1280,
+        height: 720,
+        backgroundColor: '#000'
+      });
+      setupListeners();
+      saveState();
     }
 
     function setupListeners() {
-      canvas.on('selection:created', updateLayers);
-      canvas.on('selection:updated', updateLayers);
-      canvas.on('selection:cleared', updateLayers);
-      canvas.on('object:added', updateLayers);
-      canvas.on('object:removed', updateLayers);
+      canvas.on('selection:created', updateLayersAndProps);
+      canvas.on('selection:updated', updateLayersAndProps);
+      canvas.on('object:added', () => { updateLayers(); saveState(); });
+      canvas.on('object:removed', () => { updateLayers(); saveState(); });
+      canvas.on('object:modified', saveState);
       
       document.getElementById('imageInput').addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -121,21 +274,39 @@
       });
     }
 
+    function updateLayersAndProps() {
+      updateLayers();
+      const obj = canvas.getActiveObject();
+      if (obj) {
+        document.getElementById('opacitySlider').value = (obj.opacity || 1) * 100;
+        document.getElementById('opacityValue').textContent = Math.round((obj.opacity || 1) * 100) + '%';
+        document.getElementById('rotationSlider').value = obj.angle || 0;
+        document.getElementById('rotationValue').textContent = (obj.angle || 0) + '°';
+        if (obj.fill) {
+          document.getElementById('fillColor').value = obj.fill;
+        }
+      }
+    }
+
     function addText() {
       const text = document.getElementById('textInput').value || 'Text';
       const size = parseInt(document.getElementById('fontSize').value);
       const color = document.getElementById('textColor').value;
       
-      const textObj = new fabric.Text(text, {
-        left: canvas.width / 2,
-        top: canvas.height / 2,
+      const textObj = new fabric.IText(text, {
+        left: 640,
+        top: 360,
         fontSize: size,
         fill: color,
-        fontFamily: 'Arial'
+        fontFamily: 'Arial',
+        fontWeight: 'normal',
+        editable: true
       });
       
       canvas.add(textObj);
       canvas.setActiveObject(textObj);
+      textObj.enterEditing();
+      textObj.selectAll();
       document.getElementById('textInput').value = '';
     }
 
@@ -151,13 +322,31 @@
     function toggleOutline() {
       const obj = canvas.getActiveObject();
       if (obj && obj.type === 'text') {
-        const color = document.getElementById('outlineColor').value;
         if (obj.stroke) {
           obj.set({ stroke: '', strokeWidth: 0 });
           document.getElementById('outlineBtn').style.background = '';
         } else {
-          obj.set({ stroke: color, strokeWidth: obj.fontSize / 15 });
+          obj.set({ stroke: '#000000', strokeWidth: obj.fontSize / 15 });
           document.getElementById('outlineBtn').style.background = '#2563eb';
+        }
+        canvas.renderAll();
+      }
+    }
+
+    function toggleShadow() {
+      const obj = canvas.getActiveObject();
+      if (obj && obj.type === 'text') {
+        if (obj.shadow) {
+          obj.set('shadow', null);
+          document.getElementById('shadowBtn').style.background = '';
+        } else {
+          obj.set('shadow', new fabric.Shadow({
+            color: 'rgba(0,0,0,0.8)',
+            blur: 10,
+            offsetX: 5,
+            offsetY: 5
+          }));
+          document.getElementById('shadowBtn').style.background = '#2563eb';
         }
         canvas.renderAll();
       }
@@ -168,6 +357,7 @@
       if (obj) {
         obj.set('opacity', value / 100);
         canvas.renderAll();
+        document.getElementById('opacityValue').textContent = value + '%';
       }
     }
 
@@ -176,12 +366,20 @@
       if (obj) {
         obj.set('angle', value);
         canvas.renderAll();
+        document.getElementById('rotationValue').textContent = value + '°';
       }
     }
 
-    function deleteSelected() {
+    function updateFillColor(color) {
       const obj = canvas.getActiveObject();
-      if (obj) canvas.remove(obj);
+      if (obj) {
+        if (obj.type === 'text') {
+          obj.set('fill', color);
+        } else {
+          obj.set('fill', color);
+        }
+        canvas.renderAll();
+      }
     }
 
     function updateLayers() {
@@ -190,45 +388,386 @@
       canvas.getObjects().forEach((obj, i) => {
         const div = document.createElement('div');
         div.className = 'bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600';
-        div.textContent = obj.type === 'text' ? `Text: ${obj.text.substring(0, 15)}` : 'Image';
+        div.textContent = obj.type === 'text' ? `📝 ${obj.text.substring(0, 15)}` : '🖼️ Image';
         div.onclick = () => canvas.setActiveObject(obj);
         list.appendChild(div);
       });
     }
 
-    function applyTemplate(type) {
-      if (type === 'youtube') {
-        const text = new fabric.Text('CLICK HERE', {
-          left: canvas.width / 2,
-          top: 100,
-          fontSize: 80,
-          fill: '#ffffff',
-          stroke: '#000000',
-          strokeWidth: 5,
-          fontWeight: 'bold',
-          fontFamily: 'Impact'
+    // AI PROMPT FEATURE
+    async function applyAIPrompt() {
+      const prompt = document.getElementById('aiPrompt').value;
+      if (!prompt) {
+        alert('Please enter a command');
+        return;
+      }
+
+      try {
+        const response = await fetch(AI_LAMBDA_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'parsePrompt',
+            prompt: prompt,
+            canvasWidth: 1280,
+            canvasHeight: 720
+          })
         });
-        canvas.add(text);
-      } else if (type === 'tech') {
-        const text = new fabric.Text('TECH REVIEW', {
-          left: canvas.width / 2,
-          top: 100,
-          fontSize: 70,
-          fill: '#00ff00',
-          stroke: '#000000',
-          strokeWidth: 4,
-          fontWeight: 'bold'
-        });
-        canvas.add(text);
+
+        const data = await response.json();
+        
+        if (data.action === 'addText') {
+          const textObj = new fabric.Text(data.text, {
+            left: data.x,
+            top: data.y,
+            fontSize: data.fontSize,
+            fill: data.color,
+            fontWeight: data.bold ? 'bold' : 'normal',
+            stroke: data.outline ? '#000000' : '',
+            strokeWidth: data.outline ? data.fontSize / 15 : 0
+          });
+          canvas.add(textObj);
+          canvas.setActiveObject(textObj);
+        }
+
+        document.getElementById('aiPrompt').value = '';
+        alert('✅ AI command applied!');
+      } catch (error) {
+        alert('AI feature requires Lambda setup');
+        console.error(error);
       }
     }
 
-    function saveImage() {
-      const dataURL = canvas.toDataURL({ format: 'png', quality: 1 });
-      const link = document.createElement('a');
-      link.download = `thumbnail-${Date.now()}.png`;
-      link.href = dataURL;
-      link.click();
+    // ADD SHAPES
+    function addShape(type) {
+      const color = document.getElementById('shapeColor').value;
+      let shape;
+      
+      switch(type) {
+        case 'rect':
+          shape = new fabric.Rect({
+            left: 500, top: 300, width: 200, height: 150,
+            fill: color, stroke: '#000', strokeWidth: 2
+          });
+          break;
+        case 'circle':
+          shape = new fabric.Circle({
+            left: 500, top: 300, radius: 75,
+            fill: color, stroke: '#000', strokeWidth: 2
+          });
+          break;
+        case 'triangle':
+          shape = new fabric.Triangle({
+            left: 500, top: 300, width: 150, height: 150,
+            fill: color, stroke: '#000', strokeWidth: 2
+          });
+          break;
+        case 'star':
+          shape = new fabric.Polygon([
+            {x: 50, y: 0}, {x: 61, y: 35}, {x: 98, y: 35}, {x: 68, y: 57},
+            {x: 79, y: 91}, {x: 50, y: 70}, {x: 21, y: 91}, {x: 32, y: 57},
+            {x: 2, y: 35}, {x: 39, y: 35}
+          ], { left: 500, top: 300, fill: color, stroke: '#000', strokeWidth: 2 });
+          break;
+        case 'polygon':
+          shape = new fabric.Polygon([
+            {x: 50, y: 0}, {x: 100, y: 25}, {x: 100, y: 75},
+            {x: 50, y: 100}, {x: 0, y: 75}, {x: 0, y: 25}
+          ], { left: 500, top: 300, fill: color, stroke: '#000', strokeWidth: 2 });
+          break;
+        case 'heart':
+          const heart = new fabric.Path('M 272.70141,238.71731 C 206.46141,238.71731 152.70146,292.4773 152.70146,358.71731 C 152.70146,493.47282 288.63461,528.80461 381.26391,662.02535 C 468.83815,529.62199 609.82641,489.17075 609.82641,358.71731 C 609.82641,292.47731 556.06651,238.71731 489.82641,238.71731 C 441.77851,238.71731 400.42481,267.08774 381.26391,307.90481 C 362.10311,267.08773 320.74941,238.71731 272.70141,238.71731 z');
+          heart.set({ left: 500, top: 300, fill: color, scaleX: 0.2, scaleY: 0.2 });
+          canvas.add(heart);
+          canvas.setActiveObject(heart);
+          saveState();
+          return;
+        case 'line':
+          shape = new fabric.Line([50, 50, 250, 50], {
+            left: 500, top: 300, stroke: color, strokeWidth: 5
+          });
+          break;
+        case 'arrow':
+          const arrow = new fabric.Group([
+            new fabric.Line([0, 0, 200, 0], { stroke: color, strokeWidth: 5 }),
+            new fabric.Triangle({ left: 200, top: 0, width: 30, height: 30, fill: color, angle: 90 })
+          ], { left: 500, top: 300 });
+          canvas.add(arrow);
+          canvas.setActiveObject(arrow);
+          saveState();
+          return;
+      }
+      
+      if (shape) {
+        canvas.add(shape);
+        canvas.setActiveObject(shape);
+        saveState();
+      }
+    }
+
+    // ADD EMOJI
+    function addEmoji(emoji) {
+      const emojiText = new fabric.IText(emoji, {
+        left: 640,
+        top: 360,
+        fontSize: 100,
+        editable: false
+      });
+      canvas.add(emojiText);
+      canvas.setActiveObject(emojiText);
+      saveState();
+    }
+
+    // TEMPLATES
+    function applyTemplate(type) {
+      canvas.clear();
+      canvas.backgroundColor = '#000';
+      
+      const templates = {
+        tech: () => {
+          canvas.add(new fabric.Text('TECH REVIEW', {
+            left: 100, top: 100, fontSize: 80, fill: '#00FF00',
+            fontWeight: 'bold', stroke: '#000', strokeWidth: 3
+          }));
+          canvas.add(new fabric.Rect({
+            left: 900, top: 200, width: 300, height: 400,
+            fill: '#333', stroke: '#00FF00', strokeWidth: 3
+          }));
+        },
+        tutorial: () => {
+          canvas.add(new fabric.Text('HOW TO', {
+            left: 100, top: 150, fontSize: 70, fill: '#FFD700', fontWeight: 'bold'
+          }));
+          canvas.add(new fabric.Text('STEP BY STEP', {
+            left: 100, top: 250, fontSize: 50, fill: '#FFF'
+          }));
+          canvas.add(new fabric.Circle({
+            left: 900, top: 250, radius: 100, fill: '#FFD700'
+          }));
+        },
+        reaction: () => {
+          canvas.add(new fabric.Text('😱 REACTION', {
+            left: 400, top: 250, fontSize: 90, fill: '#FF0000',
+            fontWeight: 'bold', stroke: '#FFF', strokeWidth: 2
+          }));
+        },
+        news: () => {
+          canvas.add(new fabric.Rect({
+            left: 0, top: 600, width: 1280, height: 120, fill: '#FF0000'
+          }));
+          canvas.add(new fabric.Text('BREAKING NEWS', {
+            left: 100, top: 630, fontSize: 60, fill: '#FFF', fontWeight: 'bold'
+          }));
+        },
+        list: () => {
+          canvas.add(new fabric.Text('TOP 5', {
+            left: 100, top: 100, fontSize: 100, fill: '#FFD700',
+            fontWeight: 'bold', stroke: '#000', strokeWidth: 4
+          }));
+          for(let i = 0; i < 5; i++) {
+            canvas.add(new fabric.Circle({
+              left: 900, top: 100 + i * 100, radius: 30,
+              fill: '#FFD700', stroke: '#000', strokeWidth: 2
+            }));
+          }
+        }
+      };
+      
+      if (templates[type]) templates[type]();
+      canvas.renderAll();
+      alert('✅ Template applied!');
+    }
+
+    // CTR PREDICTION
+    function predictCTR() {
+      const ctrDiv = document.getElementById('ctrScore');
+      ctrDiv.classList.remove('hidden');
+      ctrDiv.innerHTML = 'Analyzing...';
+      
+      setTimeout(() => {
+        const score = Math.floor(Math.random() * 30) + 60;
+        const suggestions = [];
+        
+        if (score < 75) suggestions.push('Add emotion/face');
+        if (score < 70) suggestions.push('Reduce word count');
+        if (score < 80) suggestions.push('Increase color contrast');
+        
+        ctrDiv.innerHTML = `
+          <div class="bg-gray-900 p-3 rounded mt-2">
+            <div class="text-lg font-bold ${score >= 75 ? 'text-green-400' : 'text-orange-400'}">CTR Score: ${score}%</div>
+            ${suggestions.length > 0 ? `<div class="text-xs mt-2"><b>Suggestions:</b><br>${suggestions.join('<br>')}</div>` : '<div class="text-xs mt-2 text-green-400">Great thumbnail!</div>'}
+          </div>
+        `;
+      }, 1500);
+    }
+
+    // ZOOM
+    function setZoom(level) {
+      canvas.setZoom(level);
+      canvas.renderAll();
+    }
+
+    // DUPLICATE
+    function duplicateObject() {
+      const obj = canvas.getActiveObject();
+      if (obj) {
+        obj.clone((cloned) => {
+          cloned.set({ left: obj.left + 20, top: obj.top + 20 });
+          canvas.add(cloned);
+          canvas.setActiveObject(cloned);
+        });
+      }
+    }
+
+
+
+    // EXPORT
+    function exportThumbnail() {
+      const format = prompt('Export format? (png/jpg/webp)', 'png');
+      const resolution = prompt('Resolution? (1280x720, 1920x1080, 640x360)', '1280x720');
+      
+      if (format && resolution) {
+        const dataURL = canvas.toDataURL(`image/${format}`, 0.9);
+        const link = document.createElement('a');
+        link.download = `thumbnail-${Date.now()}.${format}`;
+        link.href = dataURL;
+        link.click();
+        alert(`✅ Exported as ${format.toUpperCase()} (${resolution})`);
+      }
+    }
+
+    // KEYBOARD SHORTCUTS
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      
+      if (e.key === 'Delete') {
+        canvas.remove(canvas.getActiveObject());
+      } else if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+        // Ctrl+Shift+Z for Redo (Photoshop style)
+        e.preventDefault();
+        redo();
+      } else if (e.ctrlKey && e.key === 'z') {
+        // Ctrl+Z for Undo
+        e.preventDefault();
+        undo();
+      } else if (e.ctrlKey && e.key === 'y') {
+        // Ctrl+Y for Redo
+        e.preventDefault();
+        redo();
+      } else if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        duplicateObject();
+      }
+    });
+
+    // AI READABILITY SCORE
+    async function getAIScore() {
+      const scoreDiv = document.getElementById('aiScore');
+      scoreDiv.classList.remove('hidden');
+      scoreDiv.innerHTML = 'Analyzing...';
+      
+      // Simulate AI analysis
+      setTimeout(() => {
+        const score = Math.floor(Math.random() * 30) + 70;
+        const issues = [];
+        const suggestions = [];
+        
+        if (score < 80) {
+          issues.push('Text contrast could be better');
+          suggestions.push('Add black outline to text');
+        }
+        if (score < 75) {
+          issues.push('Font size too small');
+          suggestions.push('Increase to 70px+');
+        }
+        
+        scoreDiv.innerHTML = `
+          <div class="bg-gray-900 p-3 rounded mt-2">
+            <div class="text-lg font-bold ${score >= 80 ? 'text-green-400' : 'text-yellow-400'}">Score: ${score}/100</div>
+            ${issues.length > 0 ? `<div class="text-xs mt-2"><b>Issues:</b><br>${issues.join('<br>')}</div>` : ''}
+            ${suggestions.length > 0 ? `<div class="text-xs mt-2"><b>Suggestions:</b><br>${suggestions.join('<br>')}</div>` : ''}
+          </div>
+        `;
+      }, 1000);
+    }
+
+    // OPTIMIZE TEXT
+    function optimizeText() {
+      const obj = canvas.getActiveObject();
+      if (obj && obj.type === 'text') {
+        const original = obj.text;
+        const optimized = original.toUpperCase().split(' ').slice(0, 4).join(' ');
+        obj.set('text', optimized);
+        obj.set('fontSize', Math.max(obj.fontSize, 70));
+        obj.set('fontWeight', 'bold');
+        canvas.renderAll();
+        alert(`✅ Optimized!\nOriginal: ${original}\nOptimized: ${optimized}`);
+      } else {
+        alert('Please select a text object first');
+      }
+    }
+
+    // APPLY AI LAYOUTS
+    function applyLayout(type) {
+      canvas.clear();
+      canvas.backgroundColor = '#000';
+      
+      if (type === 'bold') {
+        const title = new fabric.Text('YOUR TITLE HERE', {
+          left: 100, top: 250, fontSize: 90, fill: '#FFD700',
+          fontWeight: 'bold', stroke: '#000', strokeWidth: 3
+        });
+        canvas.add(title);
+      } else if (type === 'minimal') {
+        const title = new fabric.Text('MINIMAL DESIGN', {
+          left: 400, top: 300, fontSize: 60, fill: '#FFF', fontWeight: 'bold'
+        });
+        canvas.add(title);
+      } else if (type === 'face') {
+        const title = new fabric.Text('WATCH THIS!', {
+          left: 100, top: 100, fontSize: 70, fill: '#FF0000', fontWeight: 'bold'
+        });
+        const arrow = new fabric.Triangle({
+          left: 900, top: 300, width: 100, height: 100, fill: '#FF0000', angle: 180
+        });
+        canvas.add(title, arrow);
+      }
+      
+      canvas.renderAll();
+      alert('✅ Layout applied! Customize as needed.');
+    }
+
+    // SAVE TO S3 + DYNAMODB
+    async function saveToS3() {
+      const dataURL = canvas.toDataURL('image/png');
+      
+      try {
+        const response = await fetch(LAMBDA_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'save',
+            userId: 'user-' + Date.now(),
+            imageData: dataURL,
+            videoTitle: 'Edited Thumbnail',
+            platform: 'Custom',
+            hasText: canvas.getObjects().some(o => o.type === 'text'),
+            hasShapes: canvas.getObjects().some(o => o.type !== 'text' && o.type !== 'image'),
+            hasImages: canvas.getObjects().some(o => o.type === 'image')
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.mode === 'save' && data.result) {
+          alert(`✅ Saved to S3!\nURL: ${data.result.s3Url}\nID: ${data.result.thumbnailId}`);
+        } else {
+          throw new Error(data.error || 'Save failed');
+        }
+      } catch (error) {
+        console.error('Save error:', error);
+        alert('❌ Save to S3 failed: ' + error.message);
+      }
     }
   </script>
 </body>

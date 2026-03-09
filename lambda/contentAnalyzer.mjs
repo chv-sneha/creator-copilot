@@ -1,6 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new BedrockRuntimeClient({ region: "us-east-1" });
+const dynamoClient = new DynamoDBClient({ region: "us-east-1" });
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || "creator-copilot-content-analysis";
 
 export const handler = async (event) => {
   const headers = {
@@ -114,10 +120,40 @@ Be critical and honest. Short or low-quality content should get low scores. High
     let cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
     const result = JSON.parse(cleanText);
 
+    const timestamp = new Date().toISOString();
+    const analysisId = `analysis-${Date.now()}`;
+
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        analysisId,
+        userId: event.requestContext?.authorizer?.claims?.sub || 'anonymous',
+        content,
+        platform,
+        region,
+        qualityScore: result.score,
+        hookRating: result.hookRating,
+        readabilityScore: result.readabilityScore,
+        sentimentScore: result.sentimentScore,
+        viralPotential: result.viralPotential,
+        brandAlignment: result.brandAlignment,
+        ctaStrength: result.callToActionStrength,
+        suggestions: result.suggestions,
+        hashtags: result.hashtags,
+        engagementPrediction: result.engagementPrediction,
+        issues: result.issues,
+        keywordDensity: result.keywordDensity,
+        optimalPostingTimes: result.optimalPostingTimes,
+        contentType: 'text',
+        createdAt: timestamp,
+        ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60)
+      }
+    }));
+
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(result)
+      body: JSON.stringify({ ...result, analysisId })
     };
   } catch (error) {
     console.error('Error:', error);

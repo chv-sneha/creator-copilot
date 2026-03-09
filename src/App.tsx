@@ -14,6 +14,7 @@ import ContentAnalyzerComparison from "./pages/ContentAnalyzerComparison";
 import ContentStudio from "./pages/ContentStudio";
 import ThumbnailGenerator from "./pages/ThumbnailGenerator";
 import ThumbCraft from "./pages/ThumbCraft";
+import ThumbnailEditor from "./pages/ThumbnailEditor";
 import TrendsCalendar from "./pages/TrendsCalendar";
 import SafetyCopyright from "./pages/SafetyCopyright";
 import MonetizationEngagement from "./pages/MonetizationEngagement";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="monetization" element={<MonetizationEngagement />} />
               <Route path="profile" element={<Profile />} />
             </Route>
+            <Route path="/dashboard/thumbcraft/editor" element={<ThumbnailEditor />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
