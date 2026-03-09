@@ -1,6 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || "us-east-1" });
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || "creator-copilot-trends";
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -73,10 +79,28 @@ Rules:
 
     console.log('✅ Generated', trends.length, 'trends');
 
+    const timestamp = new Date().toISOString();
+    const trendId = `trend-${Date.now()}`;
+
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        trendId,
+        userId: body.userId || 'anonymous',
+        platform,
+        niche,
+        region: region || 'Global',
+        timeframe: timeframe || '7days',
+        trends,
+        createdAt: timestamp,
+        ttl: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
+      }
+    }));
+
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ trends })
+      body: JSON.stringify({ trends, trendId })
     };
   } catch (error) {
     console.error('❌ Error:', error);

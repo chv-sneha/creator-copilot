@@ -3,17 +3,10 @@ import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedroc
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
 
 export const handler = async (event) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
   const httpMethod = event.httpMethod || event.requestContext?.http?.method;
   
   if (httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders, body: '' };
+    return { statusCode: 200, body: '' };
   }
 
   try {
@@ -68,30 +61,20 @@ Return ONLY valid JSON:
 
       return {
         statusCode: 200,
-        headers: corsHeaders,
         body: JSON.stringify({ mode: 'structure', result })
       };
     }
 
-    // MODE 2: Sample Thumbnail - Return relevant image URLs
+    // MODE 2: Sample Thumbnail - Use AI to generate Google Image search links
     if (mode === 'sample') {
-      const prompt = `Find 3 relevant thumbnail examples for:
+      const prompt = `Generate 3 Google Image search queries for thumbnail inspiration.
 Title: ${videoTitle}
 Description: ${description}
+Platform: ${platform}
 Style: ${style}
 
-Return ONLY valid JSON with real Unsplash image URLs:
-{
-  "samples": [
-    {
-      "url": "https://images.unsplash.com/photo-XXXXX?w=1280&h=720",
-      "description": "Bold tech thumbnail with dark background",
-      "relevance": 95
-    }
-  ]
-}
-
-Use Unsplash search terms: ${videoTitle.toLowerCase().split(' ').slice(0, 3).join(' ')}`;
+Return ONLY a JSON array with 3 objects:
+[{"searchQuery":"query text","description":"what it shows","relevance":95}]`;
 
       const response = await client.send(new InvokeModelCommand({
         modelId: "us.amazon.nova-lite-v1:0",
@@ -99,60 +82,113 @@ Use Unsplash search terms: ${videoTitle.toLowerCase().split(' ').slice(0, 3).joi
         accept: "application/json",
         body: JSON.stringify({
           messages: [{ role: "user", content: [{ text: prompt }] }],
-          inferenceConfig: { maxTokens: 1000, temperature: 0.7, topP: 0.9 }
+          inferenceConfig: { maxTokens: 600, temperature: 0.7, topP: 0.9 }
         })
       }));
 
       const responseBody = JSON.parse(new TextDecoder().decode(response.body));
       const generatedText = responseBody.output.message.content[0].text;
-      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-      const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { samples: [] };
+      const jsonMatch = generatedText.match(/\[[\s\S]*?\]/);
+      
+      let aiSuggestions = [];
+      if (jsonMatch) {
+        try {
+          aiSuggestions = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.error('JSON parse error:', e);
+        }
+      }
+
+      const samples = aiSuggestions.length > 0 ? aiSuggestions.map((item, i) => ({
+        url: `https://www.google.com/search?q=${encodeURIComponent(item.searchQuery + ' thumbnail')}&tbm=isch`,
+        description: item.description,
+        relevance: item.relevance || (95 - i * 5),
+        searchTerm: item.searchQuery
+      })) : [
+        {
+          url: `https://www.google.com/search?q=${encodeURIComponent(videoTitle + ' ' + platform + ' thumbnail')}&tbm=isch`,
+          description: `${platform} thumbnails for ${videoTitle}`,
+          relevance: 95,
+          searchTerm: `${videoTitle} ${platform} thumbnail`
+        },
+        {
+          url: `https://www.google.com/search?q=${encodeURIComponent(style + ' thumbnail design')}&tbm=isch`,
+          description: `${style} style thumbnail examples`,
+          relevance: 90,
+          searchTerm: `${style} thumbnail design`
+        },
+        {
+          url: `https://www.google.com/search?q=${encodeURIComponent(platform + ' thumbnail inspiration')}&tbm=isch`,
+          description: `${platform} thumbnail inspiration`,
+          relevance: 85,
+          searchTerm: `${platform} thumbnail inspiration`
+        }
+      ];
 
       return {
         statusCode: 200,
-        headers: corsHeaders,
-        body: JSON.stringify({ mode: 'sample', result })
+        body: JSON.stringify({ 
+          mode: 'sample', 
+          result: { 
+            samples,
+            note: 'AI-generated Google Image search links for thumbnail inspiration. Click to explore relevant designs.'
+          }
+        })
       };
     }
 
-    // MODE 3: Professional - Generate with Titan Image Generator
+    // MODE 3: Professional - Generate with Nova Canvas
     if (mode === 'professional') {
-      const imagePrompt = `Professional ${platform} thumbnail: ${videoTitle}. ${description}. Style: ${style}. ${colorScheme}. ${mainText ? `Text: "${mainText}"` : ''}. Mood: ${mood}. High quality, eye-catching, clickable.`;
+      try {
+        const imagePrompt = `Professional ${platform} thumbnail: ${videoTitle}. ${description}. Style: ${style}. Mood: ${mood}. High quality, eye-catching design.`;
 
-      const response = await client.send(new InvokeModelCommand({
-        modelId: "amazon.titan-image-generator-v2:0",
-        contentType: "application/json",
-        accept: "application/json",
-        body: JSON.stringify({
-          taskType: "TEXT_IMAGE",
-          textToImageParams: {
-            text: imagePrompt,
-            negativeText: "blurry, low quality, text, watermark"
-          },
-          imageGenerationConfig: {
-            numberOfImages: 1,
-            quality: "premium",
-            height: platform === "Instagram" ? 1080 : 720,
-            width: platform === "Instagram" ? 1080 : 1280,
-            cfgScale: 8.0
-          }
-        })
-      }));
+        console.log('🎨 Generating with Nova Canvas:', imagePrompt);
 
-      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-      const base64Image = responseBody.images[0];
+        const response = await client.send(new InvokeModelCommand({
+          modelId: "amazon.nova-canvas-v1:0",
+          contentType: "application/json",
+          accept: "application/json",
+          body: JSON.stringify({
+            taskType: "TEXT_IMAGE",
+            textToImageParams: {
+              text: imagePrompt
+            },
+            imageGenerationConfig: {
+              numberOfImages: 1,
+              height: 768,
+              width: 1280,
+              cfgScale: 8.0,
+              seed: Math.floor(Math.random() * 858993459)
+            }
+          })
+        }));
 
-      return {
-        statusCode: 200,
-        headers: corsHeaders,
-        body: JSON.stringify({ 
-          mode: 'professional', 
-          result: { 
-            image: base64Image,
-            prompt: imagePrompt
-          }
-        })
-      };
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+        console.log('✅ Nova Canvas response received');
+        
+        if (!responseBody.images || !responseBody.images[0]) {
+          throw new Error('No image generated');
+        }
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ 
+            mode: 'professional', 
+            result: { 
+              image: responseBody.images[0],
+              prompt: imagePrompt
+            }
+          })
+        };
+      } catch (professionalError) {
+        console.error('❌ Professional mode error:', professionalError);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ 
+            error: `Professional thumbnail generation failed: ${professionalError.message}. Please ensure Nova Canvas model access is enabled in your AWS account.`
+          })
+        };
+      }
     }
 
     throw new Error('Invalid mode');
@@ -161,7 +197,6 @@ Use Unsplash search terms: ${videoTitle.toLowerCase().split(' ').slice(0, 3).joi
     console.error('❌ Error:', error);
     return {
       statusCode: 500,
-      headers: corsHeaders,
       body: JSON.stringify({ error: error.message })
     };
   }

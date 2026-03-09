@@ -1,6 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || "us-east-1" });
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const TABLE_NAME = "creator-copilot-content-ideas";
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -76,10 +82,28 @@ Rules:
 
     console.log('✅ Generated', ideas.length, 'ideas');
 
+    const timestamp = new Date().toISOString();
+    const ideaId = `idea-${Date.now()}`;
+
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        ideaId,
+        userId: body.userId || 'anonymous',
+        niche,
+        platform,
+        contentType: contentType || 'Any',
+        targetAudience: targetAudience || 'General',
+        ideas,
+        createdAt: timestamp,
+        ttl: Math.floor(Date.now() / 1000) + (60 * 24 * 60 * 60)
+      }
+    }));
+
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ ideas })
+      body: JSON.stringify({ ideas, ideaId })
     };
   } catch (error) {
     console.error('❌ Error:', error);

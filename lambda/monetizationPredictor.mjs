@@ -1,6 +1,12 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || "us-east-1" });
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || "creator-copilot-monetization";
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -87,10 +93,33 @@ Rules:
 
     console.log('✅ Monetization prediction complete');
 
+    const timestamp = new Date().toISOString();
+    const monetizationId = `monetization-${Date.now()}`;
+
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        monetizationId,
+        userId: body.userId || 'anonymous',
+        topic,
+        reach,
+        audience,
+        platform,
+        monthlyEarnings: prediction.monthlyEarnings,
+        platformMetrics: prediction.platformMetrics,
+        brandSuggestions: prediction.brandSuggestions,
+        growthPotential: prediction.growthPotential,
+        actualRevenue: 0,
+        revenueTracking: [],
+        createdAt: timestamp,
+        ttl: Math.floor(Date.now() / 1000) + (180 * 24 * 60 * 60)
+      }
+    }));
+
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify({ prediction })
+      body: JSON.stringify({ prediction, monetizationId })
     };
   } catch (error) {
     console.error('❌ Error:', error);

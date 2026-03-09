@@ -350,7 +350,11 @@ const ContentStudio = () => {
 
   // Filter library
   const filteredLibrary = savedLibrary.filter(item => {
-    const matchesFilter = libraryFilter === "All" || item.type === libraryFilter;
+    const matchesFilter = libraryFilter === "All" || 
+                         (libraryFilter === "Posts" && item.type === "Post") ||
+                         (libraryFilter === "Hooks" && item.type === "Hook") ||
+                         (libraryFilter === "Thumbnails" && item.type === "Thumbnail") ||
+                         (libraryFilter === "Translations" && item.type === "Translation");
     const matchesSearch = item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          item.platform.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;

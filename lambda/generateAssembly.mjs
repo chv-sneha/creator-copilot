@@ -20,32 +20,42 @@ export const handler = async (event) => {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     const { content, platform, contentFormat, processingMode } = body;
 
-    const prompt = `Assemble and optimize this content for ${platform}:
-Content: ${content}
+    const prompt = `You are an expert content strategist. Transform this content for ${platform}:
+
+Original Content: ${content}
 Format: ${contentFormat}
-Mode: ${processingMode}
+Processing Mode: ${processingMode}
+
+Create platform-optimized versions for ALL 4 platforms with DETAILED, COMPLETE content:
 
 Return ONLY valid JSON:
 {
   "Instagram": {
-    "caption": "Optimized Instagram caption",
-    "hashtags": "#hashtag1 #hashtag2 #hashtag3",
-    "charCount": 150
+    "caption": "[Write a FULL 150-200 word engaging caption with emojis, line breaks, and storytelling. Include hook, value, and CTA]",
+    "hashtags": "[30 relevant hashtags]",
+    "charCount": 0
   },
   "LinkedIn": {
-    "post": "Professional LinkedIn post",
-    "charCount": 200
+    "post": "[Write a FULL 300-400 word professional post with paragraphs, insights, and thought leadership. Include hook, body with 3-5 key points, and CTA]",
+    "charCount": 0
   },
   "YouTube": {
-    "script": "Video script",
-    "title": "Video title",
-    "charCount": 300
+    "title": "[Catchy 60-char SEO title with keywords]",
+    "script": "[Write a FULL 500-800 word video script with: INTRO (hook + preview), MAIN CONTENT (detailed explanation with examples), CONCLUSION (summary + CTA). Include timestamps]",
+    "charCount": 0
   },
   "X (Twitter)": {
-    "tweets": ["Tweet 1", "Tweet 2", "Tweet 3"],
+    "tweets": ["[Tweet 1: Hook with question or bold statement]", "[Tweet 2: Key insight 1]", "[Tweet 3: Key insight 2]", "[Tweet 4: Key insight 3]", "[Tweet 5: CTA with link]"],
     "charCount": 280
   }
-}`;
+}
+
+RULES:
+- Instagram: Use emojis, line breaks, storytelling format
+- LinkedIn: Professional tone, paragraph format, thought leadership
+- YouTube: Full script with intro/body/outro, timestamps
+- Twitter: 5-tweet thread, each under 280 chars
+- Make content DETAILED and COMPLETE, not summaries`;
 
     const response = await client.send(new InvokeModelCommand({
       modelId: "us.amazon.nova-lite-v1:0",
